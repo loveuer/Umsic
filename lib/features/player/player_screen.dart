@@ -6,6 +6,7 @@ import 'package:just_audio/just_audio.dart';
 import '../../core/api/models/subsonic_models.dart';
 import '../../core/audio/audio_handler.dart';
 import '../../core/audio/player_controller.dart';
+import '../../features/playlists/playlists_provider.dart';
 import '../../shared/widgets/cover_art.dart';
 
 class PlayerScreen extends ConsumerWidget {
@@ -28,168 +29,232 @@ class PlayerScreen extends ConsumerWidget {
         builder: (context, mediaSnap) {
           final media = mediaSnap.data;
 
-          return StreamBuilder<PlaybackState>(
-            stream: handler.playbackState,
-            builder: (context, stateSnap) {
-              final state = stateSnap.data;
-              final playing = state?.playing ?? false;
-              final processingState = state?.processingState;
+          return StreamBuilder<int?>(
+            stream: handler.player.currentIndexStream,
+            builder: (context, idxSnap) {
+              final currentIdx =
+                  idxSnap.data ?? handler.player.currentIndex ?? -1;
+              final currentSongId =
+                  (currentIdx >= 0 && currentIdx < queue.length)
+                      ? queue[currentIdx].id
+                      : null;
 
-              return Column(
-                children: [
-                  // Cover art
-                  Expanded(
-                    flex: 5,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(32, 80, 32, 16),
-                        child: AspectRatio(
-                          aspectRatio: 1,
-                          child: CoverArtImage(
-                            url: media?.artUri?.toString(),
-                            borderRadius: 16,
+              return StreamBuilder<PlaybackState>(
+                stream: handler.playbackState,
+                builder: (context, stateSnap) {
+                  final state = stateSnap.data;
+                  final playing = state?.playing ?? false;
+                  final processingState = state?.processingState;
+
+                  return Column(
+                    children: [
+                      // Cover art
+                      Expanded(
+                        flex: 5,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(32, 80, 32, 16),
+                            child: AspectRatio(
+                              aspectRatio: 1,
+                              child: CoverArtImage(
+                                url: media?.artUri?.toString(),
+                                borderRadius: 16,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
 
-                  // Title / Artist
-                  Expanded(
-                    flex: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            media?.title ?? '未播放',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            media?.artist ?? '',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Progress bar
-                  _ProgressBar(
-                    player: handler.player,
-                    mediaStream: handler.mediaItem,
-                    onSeek: handler.seek,
-                  ),
-
-                  // Controls
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        IconButton(
-                          iconSize: 36,
-                          icon: const Icon(Icons.skip_previous),
-                          onPressed: handler.skipToPrevious,
-                        ),
-                        FilledButton(
-                          style: FilledButton.styleFrom(
-                            shape: const CircleBorder(),
-                            padding: const EdgeInsets.all(20),
-                          ),
-                          onPressed: () {
-                            if (processingState == AudioProcessingState.completed) {
-                              handler.seek(Duration.zero);
-                              handler.play();
-                            } else {
-                              playing ? handler.pause() : handler.play();
-                            }
-                          },
-                          child: Icon(
-                            processingState == AudioProcessingState.loading ||
-                                    processingState == AudioProcessingState.buffering
-                                ? Icons.hourglass_top
-                                : playing
-                                    ? Icons.pause
-                                    : Icons.play_arrow,
-                            size: 36,
-                          ),
-                        ),
-                        IconButton(
-                          iconSize: 36,
-                          icon: const Icon(Icons.skip_next),
-                          onPressed: handler.skipToNext,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Play mode + queue row
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Play mode cycle button
-                        IconButton(
-                          tooltip: switch (playMode) {
-                            PlayMode.sequence => '顺序播放',
-                            PlayMode.loop => '列表循环',
-                            PlayMode.shuffle => '随机播放',
-                          },
-                          icon: Icon(
-                            switch (playMode) {
-                              PlayMode.sequence => Icons.repeat,
-                              PlayMode.loop => Icons.repeat,
-                              PlayMode.shuffle => Icons.shuffle,
-                            },
-                            color: switch (playMode) {
-                              PlayMode.sequence =>
-                                Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(128),
-                              PlayMode.loop || PlayMode.shuffle =>
-                                Theme.of(context).colorScheme.primary,
-                            },
-                          ),
-                          onPressed: () =>
-                              ref.read(playModeNotifierProvider.notifier).cycle(),
-                        ),
-
-                        // Queue button
-                        IconButton(
-                          tooltip: '播放列表 (${queue.length})',
-                          icon: const Icon(Icons.queue_music),
-                          onPressed: queue.isEmpty
-                              ? null
-                              : () => showModalBottomSheet<void>(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    useSafeArea: true,
-                                    builder: (_) => _QueueBottomSheet(
-                                      handler: handler,
-                                      queue: queue,
+                      // Title / Artist + Favorite
+                      Expanded(
+                        flex: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // SizedBox.expand forces Stack to full available width
+                              // so Positioned(right:0) lands at the true right edge
+                              SizedBox(
+                                width: double.infinity,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      media?.title ?? '未播放',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall
+                                          ?.copyWith(fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
                                     ),
-                                  ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      media?.artist ?? '',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Heart button at the right edge, doesn't affect text centering
+                              Positioned(
+                                right: 0,
+                                child: _FavoriteButton(songId: currentSongId),
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
+                      ),
+
+                      // Progress bar
+                      _ProgressBar(
+                        player: handler.player,
+                        mediaStream: handler.mediaItem,
+                        onSeek: handler.seek,
+                      ),
+
+                      // Controls
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            IconButton(
+                              iconSize: 36,
+                              icon: const Icon(Icons.skip_previous),
+                              onPressed: handler.skipToPrevious,
+                            ),
+                            FilledButton(
+                              style: FilledButton.styleFrom(
+                                shape: const CircleBorder(),
+                                padding: const EdgeInsets.all(20),
+                              ),
+                              onPressed: () {
+                                if (processingState ==
+                                    AudioProcessingState.completed) {
+                                  handler.seek(Duration.zero);
+                                  handler.play();
+                                } else {
+                                  playing ? handler.pause() : handler.play();
+                                }
+                              },
+                              child: Icon(
+                                processingState ==
+                                            AudioProcessingState.loading ||
+                                        processingState ==
+                                            AudioProcessingState.buffering
+                                    ? Icons.hourglass_top
+                                    : playing
+                                        ? Icons.pause
+                                        : Icons.play_arrow,
+                                size: 36,
+                              ),
+                            ),
+                            IconButton(
+                              iconSize: 36,
+                              icon: const Icon(Icons.skip_next),
+                              onPressed: handler.skipToNext,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Play mode + queue row
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Play mode cycle button
+                            IconButton(
+                              tooltip: switch (playMode) {
+                                PlayMode.sequence => '顺序播放',
+                                PlayMode.loop => '列表循环',
+                                PlayMode.shuffle => '随机播放',
+                              },
+                              icon: Icon(
+                                switch (playMode) {
+                                  PlayMode.sequence => Icons.repeat,
+                                  PlayMode.loop => Icons.repeat,
+                                  PlayMode.shuffle => Icons.shuffle,
+                                },
+                                color: switch (playMode) {
+                                  PlayMode.sequence => Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant
+                                      .withAlpha(128),
+                                  PlayMode.loop ||
+                                  PlayMode.shuffle =>
+                                    Theme.of(context).colorScheme.primary,
+                                },
+                              ),
+                              onPressed: () =>
+                                  ref.read(playModeNotifierProvider.notifier).cycle(),
+                            ),
+
+                            // Queue button
+                            IconButton(
+                              tooltip: '播放列表 (${queue.length})',
+                              icon: const Icon(Icons.queue_music),
+                              onPressed: queue.isEmpty
+                                  ? null
+                                  : () => showModalBottomSheet<void>(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        useSafeArea: true,
+                                        builder: (_) => _QueueBottomSheet(
+                                          handler: handler,
+                                          queue: queue,
+                                        ),
+                                      ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               );
             },
           );
         },
       ),
+    );
+  }
+}
+
+// ─── Favorite Button ───────────────────────────────────────────────────────────
+
+class _FavoriteButton extends ConsumerWidget {
+  const _FavoriteButton({required this.songId});
+  final String? songId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (songId == null) return const SizedBox.shrink();
+    final starredIds = ref.watch(starredSongsProvider);
+    final isStarred = starredIds.valueOrNull?.contains(songId) ?? false;
+
+    return IconButton(
+      iconSize: 28,
+      icon: Icon(
+        isStarred ? Icons.favorite : Icons.favorite_border,
+        color: isStarred ? Theme.of(context).colorScheme.primary : null,
+      ),
+      onPressed: () =>
+          ref.read(starredSongsProvider.notifier).toggle(songId!),
     );
   }
 }

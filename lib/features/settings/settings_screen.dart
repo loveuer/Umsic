@@ -1,8 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/api/navidrome_client.dart';
 import '../../core/storage/cache_manager.dart';
@@ -111,12 +112,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _clearCache() async {
     setState(() => _clearingCache = true);
     try {
-      // Clear our custom managers + DefaultCacheManager (used by LockCachingAudioSource)
       final audioMgr = ref.read(audioCacheManagerProvider);
       final imageMgr = ref.read(imageCacheManagerProvider);
+      // Clear the cache-manager DB entries first.
       await audioMgr.emptyCache();
       await imageMgr.emptyCache();
-      await DefaultCacheManager().emptyCache();
+      // flutter_cache_manager 3.x fires file deletions with unawaited(), so
+      // physical files may still exist after emptyCache() returns.
+      // Force-delete the directories synchronously to guarantee a full clear.
+      final tempDir = await getTemporaryDirectory();
+      for (final key in [
+        MusicAudioCacheManager.cacheKey,
+        MusicImageCacheManager.cacheKey,
+      ]) {
+        final dir = Directory('${tempDir.path}/$key');
+        if (await dir.exists()) await dir.delete(recursive: true);
+      }
       ref.invalidate(cacheUsageBytesProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -51,15 +51,26 @@ class MusicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
       );
     });
     queue.add(items);
-    final sources = List.generate(songs.length, (i) {
+
+    final sources = await Future.wait(List.generate(songs.length, (i) async {
       if (cacheManager != null) {
-        // LockCachingAudioSource caches the audio file during playback.
-        // It uses DefaultCacheManager internally (just_audio 0.10.x).
-        // ignore: experimental_member_use
-        return LockCachingAudioSource(Uri.parse(streamUrls[i]));
+        // Use the stable songId as the cache key so the URL's random salt
+        // doesn't break cache lookups across sessions.
+        final cacheKey = 'audio_${songs[i].id}';
+        final cached = await cacheManager!.getFileFromCache(cacheKey);
+        if (cached != null) {
+          // Cache hit — play from local file instantly.
+          return AudioSource.uri(cached.file.uri);
+        }
+        // Cache miss — stream from network and download in background
+        // so the next play is instant.
+        cacheManager!
+            .downloadFile(streamUrls[i], key: cacheKey)
+            .ignore();
       }
       return AudioSource.uri(Uri.parse(streamUrls[i]));
-    });
+    }));
+
     await _player.setAudioSources(sources, initialIndex: initialIndex);
     if (items.isNotEmpty) mediaItem.add(items[initialIndex]);
   }
