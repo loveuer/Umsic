@@ -44,7 +44,7 @@ final imageCacheManagerProvider = Provider<MusicImageCacheManager>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ImageCacheManagerRef = ProviderRef<MusicImageCacheManager>;
-String _$cacheUsageBytesHash() => r'5d186779d79b846a3ff15efe090f64d815df4752';
+String _$cacheUsageBytesHash() => r'ed423cb080d34db7d7b0584191cd62c12b6c7f00';
 
 /// See also [cacheUsageBytes].
 @ProviderFor(cacheUsageBytes)

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../../core/api/models/subsonic_models.dart';
+import '../../core/audio/audio_handler.dart';
 import '../../core/audio/player_controller.dart';
 import '../../shared/widgets/cover_art.dart';
 
@@ -12,6 +14,8 @@ class PlayerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final handler = ref.watch(audioHandlerProvider);
+    final playMode = ref.watch(playModeNotifierProvider);
+    final queue = ref.watch(playerQueueProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -90,7 +94,7 @@ class PlayerScreen extends ConsumerWidget {
 
                   // Controls
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -130,6 +134,56 @@ class PlayerScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
+
+                  // Play mode + queue row
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Play mode cycle button
+                        IconButton(
+                          tooltip: switch (playMode) {
+                            PlayMode.sequence => '顺序播放',
+                            PlayMode.loop => '列表循环',
+                            PlayMode.shuffle => '随机播放',
+                          },
+                          icon: Icon(
+                            switch (playMode) {
+                              PlayMode.sequence => Icons.repeat,
+                              PlayMode.loop => Icons.repeat,
+                              PlayMode.shuffle => Icons.shuffle,
+                            },
+                            color: switch (playMode) {
+                              PlayMode.sequence =>
+                                Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(128),
+                              PlayMode.loop || PlayMode.shuffle =>
+                                Theme.of(context).colorScheme.primary,
+                            },
+                          ),
+                          onPressed: () =>
+                              ref.read(playModeNotifierProvider.notifier).cycle(),
+                        ),
+
+                        // Queue button
+                        IconButton(
+                          tooltip: '播放列表 (${queue.length})',
+                          icon: const Icon(Icons.queue_music),
+                          onPressed: queue.isEmpty
+                              ? null
+                              : () => showModalBottomSheet<void>(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    useSafeArea: true,
+                                    builder: (_) => _QueueBottomSheet(
+                                      handler: handler,
+                                      queue: queue,
+                                    ),
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               );
             },
@@ -139,6 +193,111 @@ class PlayerScreen extends ConsumerWidget {
     );
   }
 }
+
+// ─── Queue Bottom Sheet ────────────────────────────────────────────────────────
+
+class _QueueBottomSheet extends StatelessWidget {
+  const _QueueBottomSheet({required this.handler, required this.queue});
+
+  final MusicAudioHandler handler;
+  final List<Song> queue;
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Handle bar
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(80),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Row(
+                children: [
+                  Text('播放列表', style: Theme.of(context).textTheme.titleMedium),
+                  const Spacer(),
+                  Text(
+                    '${queue.length} 首',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: StreamBuilder<int?>(
+                stream: handler.player.currentIndexStream,
+                builder: (context, snap) {
+                  final currentIdx = snap.data ?? -1;
+                  return ListView.builder(
+                    controller: scrollController,
+                    itemCount: queue.length,
+                    itemBuilder: (context, i) {
+                      final song = queue[i];
+                      final isCurrent = i == currentIdx;
+                      return ListTile(
+                        selected: isCurrent,
+                        selectedTileColor:
+                            Theme.of(context).colorScheme.primaryContainer.withAlpha(80),
+                        leading: isCurrent
+                            ? Icon(Icons.volume_up,
+                                color: Theme.of(context).colorScheme.primary)
+                            : Text(
+                                '${i + 1}',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                              ),
+                        title: Text(
+                          song.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: isCurrent
+                              ? TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                )
+                              : null,
+                        ),
+                        subtitle: Text(
+                          song.artist ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () {
+                          handler.skipToQueueItem(i);
+                          Navigator.of(context).pop();
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ─── Progress Bar ──────────────────────────────────────────────────────────────
 
 class _ProgressBar extends StatelessWidget {
   const _ProgressBar({

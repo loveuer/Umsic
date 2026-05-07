@@ -18,6 +18,9 @@ MediaItem songToMediaItem(Song song, String streamUrl, {String? coverArtUrl}) {
 
 class MusicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   MusicAudioHandler() {
+    // Initialize with loop-all to match the default PlayMode.loop.
+    // just_audio preserves loopMode/shuffleMode across setAudioSources calls.
+    _player.setLoopMode(LoopMode.all);
     _player.playbackEventStream.map(_transformEvent).pipe(playbackState);
     _player.currentIndexStream.listen((index) {
       if (index != null && index < queue.value.length) {

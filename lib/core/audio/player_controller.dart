@@ -1,3 +1,4 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../api/models/subsonic_models.dart';
@@ -5,6 +6,12 @@ import '../api/navidrome_client.dart';
 import 'audio_handler.dart';
 
 part 'player_controller.g.dart';
+
+enum PlayMode {
+  sequence, // 顺序播放 — play through once, stop
+  loop,     // 列表循环 — repeat all
+  shuffle,  // 随机播放 — shuffle + repeat all
+}
 
 @Riverpod(keepAlive: true)
 MusicAudioHandler audioHandler(AudioHandlerRef ref) {
@@ -28,6 +35,37 @@ class CurrentIndex extends _$CurrentIndex {
   int build() => 0;
 
   void set(int index) => state = index;
+}
+
+/// Play mode — sequence / loop / shuffle
+@Riverpod(keepAlive: true)
+class PlayModeNotifier extends _$PlayModeNotifier {
+  @override
+  PlayMode build() => PlayMode.loop;
+
+  Future<void> setMode(PlayMode mode) async {
+    state = mode;
+    final handler = ref.read(audioHandlerProvider);
+    switch (mode) {
+      case PlayMode.sequence:
+        await handler.setRepeatMode(AudioServiceRepeatMode.none);
+        await handler.setShuffleMode(AudioServiceShuffleMode.none);
+      case PlayMode.loop:
+        await handler.setRepeatMode(AudioServiceRepeatMode.all);
+        await handler.setShuffleMode(AudioServiceShuffleMode.none);
+      case PlayMode.shuffle:
+        await handler.setRepeatMode(AudioServiceRepeatMode.all);
+        await handler.setShuffleMode(AudioServiceShuffleMode.all);
+    }
+  }
+
+  Future<void> cycle() async {
+    await setMode(switch (state) {
+      PlayMode.sequence => PlayMode.loop,
+      PlayMode.loop => PlayMode.shuffle,
+      PlayMode.shuffle => PlayMode.sequence,
+    });
+  }
 }
 
 /// Helper provider to play a list of songs starting at index

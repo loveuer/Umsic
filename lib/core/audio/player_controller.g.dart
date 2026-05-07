@@ -57,7 +57,25 @@ final currentIndexProvider = NotifierProvider<CurrentIndex, int>.internal(
 );
 
 typedef _$CurrentIndex = Notifier<int>;
-String _$playerControllerHash() => r'd692abb31db0d0fd1443177640d631122ba263a2';
+String _$playModeNotifierHash() => r'ecdf344db6bdbc9daeb8282a5640a01514409ffb';
+
+/// Play mode — sequence / loop / shuffle
+///
+/// Copied from [PlayModeNotifier].
+@ProviderFor(PlayModeNotifier)
+final playModeNotifierProvider =
+    NotifierProvider<PlayModeNotifier, PlayMode>.internal(
+      PlayModeNotifier.new,
+      name: r'playModeNotifierProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$playModeNotifierHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$PlayModeNotifier = Notifier<PlayMode>;
+String _$playerControllerHash() => r'fa7c9f6277cfbed502d29a4d7cc9f42a16b68f47';
 
 /// Helper provider to play a list of songs starting at index
 ///
