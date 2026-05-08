@@ -6,30 +6,9 @@ part of 'cache_manager.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$audioCacheManagerHash() => r'f7a7e14dd90184bc2ed53cb21a36abac6b0edcae';
-
-/// Override in main() with an initialized MusicAudioCacheManager.
-///
-/// Copied from [audioCacheManager].
-@ProviderFor(audioCacheManager)
-final audioCacheManagerProvider = Provider<MusicAudioCacheManager>.internal(
-  audioCacheManager,
-  name: r'audioCacheManagerProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$audioCacheManagerHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef AudioCacheManagerRef = ProviderRef<MusicAudioCacheManager>;
 String _$imageCacheManagerHash() => r'eea4915fe2983253f88b504466d0fcee817c91d7';
 
-/// Override in main() with an initialized MusicImageCacheManager.
-///
-/// Copied from [imageCacheManager].
+/// See also [imageCacheManager].
 @ProviderFor(imageCacheManager)
 final imageCacheManagerProvider = Provider<MusicImageCacheManager>.internal(
   imageCacheManager,

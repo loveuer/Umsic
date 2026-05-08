@@ -12,17 +12,6 @@ const int kDefaultCacheMaxSizeMb = 5 * 1024; // 5 GB
 
 // ─── Cache Managers ───────────────────────────────────────────────────────────
 
-class MusicAudioCacheManager extends CacheManager {
-  static const String cacheKey = 'music_audio_cache';
-
-  MusicAudioCacheManager({required int maxObjects})
-      : super(Config(
-          cacheKey,
-          maxNrOfCacheObjects: maxObjects,
-          stalePeriod: const Duration(days: 30),
-        ));
-}
-
 class MusicImageCacheManager extends CacheManager with ImageCacheManager {
   static const String cacheKey = 'music_image_cache';
 
@@ -36,23 +25,10 @@ class MusicImageCacheManager extends CacheManager with ImageCacheManager {
 
 // ─── Conversion helpers ───────────────────────────────────────────────────────
 
-/// Convert MB budget to a max object count for audio (~7 MB/file average).
-int audioObjectsFromMb(int maxSizeMb) =>
-    (maxSizeMb * 1024 ~/ 7168).clamp(10, 5000);
-
-/// Convert MB budget to a max object count for images (~100 KB/file average).
-int imageObjectsFromMb(int maxSizeMb) =>
-    (maxSizeMb * 2).clamp(100, 10000);
+int imageObjectsFromMb(int maxSizeMb) => (maxSizeMb * 2).clamp(100, 10000);
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
-/// Override in main() with an initialized MusicAudioCacheManager.
-@Riverpod(keepAlive: true)
-MusicAudioCacheManager audioCacheManager(AudioCacheManagerRef ref) {
-  throw UnimplementedError('audioCacheManager must be overridden in main()');
-}
-
-/// Override in main() with an initialized MusicImageCacheManager.
 @Riverpod(keepAlive: true)
 MusicImageCacheManager imageCacheManager(ImageCacheManagerRef ref) {
   throw UnimplementedError('imageCacheManager must be overridden in main()');
@@ -79,8 +55,6 @@ class CacheMaxSizeMb extends _$CacheMaxSizeMb {
 
 @riverpod
 Future<int> cacheUsageBytes(CacheUsageBytesRef ref) async {
-  // Scan the whole temp directory — covers DefaultCacheManager (audio),
-  // MusicImageCacheManager, and any other cache.
   final tempDir = await getTemporaryDirectory();
   int total = 0;
   final dir = Directory(tempDir.path);

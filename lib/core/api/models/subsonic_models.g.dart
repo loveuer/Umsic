@@ -225,6 +225,37 @@ Map<String, dynamic> _$$Starred2ResultImplToJson(
   'artist': instance.artist,
 };
 
+_$LyricsLineImpl _$$LyricsLineImplFromJson(Map<String, dynamic> json) =>
+    _$LyricsLineImpl(
+      start: (json['start'] as num).toInt(),
+      value: json['value'] as String,
+    );
+
+Map<String, dynamic> _$$LyricsLineImplToJson(_$LyricsLineImpl instance) =>
+    <String, dynamic>{'start': instance.start, 'value': instance.value};
+
+_$StructuredLyricsImpl _$$StructuredLyricsImplFromJson(
+  Map<String, dynamic> json,
+) => _$StructuredLyricsImpl(
+  displayTitle: json['displayTitle'] as String,
+  displayArtist: json['displayArtist'] as String,
+  lang: json['lang'] as String,
+  synced: json['synced'] as bool? ?? false,
+  line: (json['line'] as List<dynamic>)
+      .map((e) => LyricsLine.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$$StructuredLyricsImplToJson(
+  _$StructuredLyricsImpl instance,
+) => <String, dynamic>{
+  'displayTitle': instance.displayTitle,
+  'displayArtist': instance.displayArtist,
+  'lang': instance.lang,
+  'synced': instance.synced,
+  'line': instance.line,
+};
+
 _$SearchResultImpl _$$SearchResultImplFromJson(Map<String, dynamic> json) =>
     _$SearchResultImpl(
       artist:

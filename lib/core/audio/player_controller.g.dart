@@ -23,6 +23,26 @@ final audioHandlerProvider = Provider<MusicAudioHandler>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AudioHandlerRef = ProviderRef<MusicAudioHandler>;
+String _$songLyricsHash() => r'880a0b3cfae2cc443d7d27d094565fab738c2f2f';
+
+/// Current song's lyrics
+///
+/// Copied from [songLyrics].
+@ProviderFor(songLyrics)
+final songLyricsProvider =
+    AutoDisposeFutureProvider<List<StructuredLyrics>>.internal(
+      songLyrics,
+      name: r'songLyricsProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$songLyricsHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef SongLyricsRef = AutoDisposeFutureProviderRef<List<StructuredLyrics>>;
 String _$playerQueueHash() => r'0e137fcd1ee23503e59caf1c09ef791e0b40d0f3';
 
 /// Current playback queue (Song objects)
@@ -75,7 +95,7 @@ final playModeNotifierProvider =
     );
 
 typedef _$PlayModeNotifier = Notifier<PlayMode>;
-String _$playerControllerHash() => r'fa7c9f6277cfbed502d29a4d7cc9f42a16b68f47';
+String _$playerControllerHash() => r'd692abb31db0d0fd1443177640d631122ba263a2';
 
 /// Helper provider to play a list of songs starting at index
 ///

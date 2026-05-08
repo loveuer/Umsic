@@ -112,22 +112,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _clearCache() async {
     setState(() => _clearingCache = true);
     try {
-      final audioMgr = ref.read(audioCacheManagerProvider);
       final imageMgr = ref.read(imageCacheManagerProvider);
-      // Clear the cache-manager DB entries first.
-      await audioMgr.emptyCache();
       await imageMgr.emptyCache();
-      // flutter_cache_manager 3.x fires file deletions with unawaited(), so
-      // physical files may still exist after emptyCache() returns.
-      // Force-delete the directories synchronously to guarantee a full clear.
       final tempDir = await getTemporaryDirectory();
-      for (final key in [
-        MusicAudioCacheManager.cacheKey,
-        MusicImageCacheManager.cacheKey,
-      ]) {
-        final dir = Directory('${tempDir.path}/$key');
-        if (await dir.exists()) await dir.delete(recursive: true);
-      }
+      // Clear image cache files
+      final imageDir = Directory('${tempDir.path}/${MusicImageCacheManager.cacheKey}');
+      if (await imageDir.exists()) await imageDir.delete(recursive: true);
+      // Clear audio cache files (LockCachingAudioSource directory)
+      final audioDir = Directory('${tempDir.path}/audio_cache');
+      if (await audioDir.exists()) await audioDir.delete(recursive: true);
       ref.invalidate(cacheUsageBytesProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

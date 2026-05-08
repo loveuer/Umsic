@@ -12,11 +12,13 @@ import 'core/storage/cache_manager.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load cache size preference and create cache managers
+  // Create image cache manager only — audio uses LockCachingAudioSource
+  // with its own cache directory managed internally.
   final prefs = await SharedPreferences.getInstance();
   final maxSizeMb = prefs.getInt(kCacheMaxSizeMbKey) ?? kDefaultCacheMaxSizeMb;
-  final audioMgr = MusicAudioCacheManager(maxObjects: audioObjectsFromMb(maxSizeMb));
-  final imageMgr = MusicImageCacheManager(maxObjects: imageObjectsFromMb(maxSizeMb));
+  final imageMgr = MusicImageCacheManager(
+    maxObjects: imageObjectsFromMb(maxSizeMb),
+  );
 
   final handler = await AudioService.init(
     builder: () => MusicAudioHandler(),
@@ -27,13 +29,11 @@ Future<void> main() async {
       androidStopForegroundOnPause: true,
     ),
   );
-  handler.cacheManager = audioMgr;
 
   runApp(
     ProviderScope(
       overrides: [
         audioHandlerProvider.overrideWithValue(handler),
-        audioCacheManagerProvider.overrideWithValue(audioMgr),
         imageCacheManagerProvider.overrideWithValue(imageMgr),
       ],
       child: const MusicApp(),

@@ -100,3 +100,14 @@ class PlayerController extends _$PlayerController {
 
   Future<void> playOne(Song song) => playSongs([song]);
 }
+
+/// Current song's lyrics
+@riverpod
+Future<List<StructuredLyrics>> songLyrics(SongLyricsRef ref) async {
+  final queue = ref.watch(playerQueueProvider);
+  final idx = ref.watch(currentIndexProvider);
+  if (queue.isEmpty || idx < 0 || idx >= queue.length) return [];
+  final song = queue[idx];
+  final client = await ref.read(navidromeClientProvider.future);
+  return client.getLyrics(song.id);
+}

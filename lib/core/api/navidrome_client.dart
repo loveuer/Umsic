@@ -179,6 +179,20 @@ class NavidromeClient {
   Future<void> star(String id) => _request('star', {'id': id});
   Future<void> unstar(String id) => _request('unstar', {'id': id});
 
+  // ─── Lyrics ────────────────────────────────────────────────────────────────
+
+  Future<List<StructuredLyrics>> getLyrics(String songId) async {
+    try {
+      final body = await _request('getLyricsBySongId', {'id': songId});
+      final lyricsList = body['lyricsList'] as Map<String, dynamic>?;
+      if (lyricsList == null) return [];
+      final lyrics = lyricsList['structuredLyrics'] as List<dynamic>? ?? [];
+      return lyrics.map((e) => StructuredLyrics.fromJson(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
   // ─── Search ───────────────────────────────────────────────────────────────
 
   Future<SearchResult> search(String query) async {

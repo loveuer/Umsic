@@ -22,47 +22,50 @@ class AlbumsScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text(e.toString())),
         data: (albums) {
           final clientAsync = ref.watch(navidromeClientProvider);
-          return GridView.builder(
-            padding: const EdgeInsets.all(12),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(albumsProvider),
+            child: GridView.builder(
+              padding: const EdgeInsets.all(12),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.75,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: albums.length,
+              itemBuilder: (context, index) {
+                final album = albums[index];
+                final coverUrl = album.coverArt != null
+                    ? clientAsync.valueOrNull?.coverArtUrl(album.coverArt!, size: 300)
+                    : null;
+                return GestureDetector(
+                  onTap: () => context.push('/albums/${album.id}'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: CoverArtImage(url: coverUrl, borderRadius: 8),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        album.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      Text(
+                        album.artist ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-            itemCount: albums.length,
-            itemBuilder: (context, index) {
-              final album = albums[index];
-              final coverUrl = album.coverArt != null
-                  ? clientAsync.valueOrNull?.coverArtUrl(album.coverArt!, size: 300)
-                  : null;
-              return GestureDetector(
-                onTap: () => context.push('/albums/${album.id}'),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: CoverArtImage(url: coverUrl, borderRadius: 8),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      album.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                    Text(
-                      album.artist ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              );
-            },
           );
         },
       ),

@@ -1,6 +1,8 @@
+import 'dart:io';
+
 import 'package:audio_service/audio_service.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../api/models/subsonic_models.dart';
 
@@ -16,10 +18,20 @@ MediaItem songToMediaItem(Song song, String streamUrl, {String? coverArtUrl}) {
   );
 }
 
+/// Clean up stale `.part` cache files left over from interrupted downloads.
+Future<void> _cleanStaleCacheFiles(Directory cacheDir) async {
+  if (!await cacheDir.exists()) return;
+  await for (final entity in cacheDir.list()) {
+    if (entity is File && entity.path.endsWith('.part')) {
+      try {
+        await entity.delete();
+      } catch (_) {}
+    }
+  }
+}
+
 class MusicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   MusicAudioHandler() {
-    // Initialize with loop-all to match the default PlayMode.loop.
-    // just_audio preserves loopMode/shuffleMode across setAudioSources calls.
     _player.setLoopMode(LoopMode.all);
     _player.playbackEventStream.map(_transformEvent).pipe(playbackState);
     _player.currentIndexStream.listen((index) {
@@ -34,8 +46,39 @@ class MusicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
 
   AudioPlayer get player => _player;
 
-  /// Set this before playing to enable audio file caching.
-  BaseCacheManager? cacheManager;
+  late Directory _cacheDir;
+  bool _cacheInitialized = false;
+
+  Future<void> _ensureCacheDir() async {
+    if (_cacheInitialized) return;
+    final tempDir = await getTemporaryDirectory();
+    _cacheDir = Directory('${tempDir.path}/audio_cache');
+    if (!await _cacheDir.exists()) {
+      await _cacheDir.create(recursive: true);
+    }
+    _cleanStaleCacheFiles(_cacheDir);
+    _cacheInitialized = true;
+  }
+
+  Future<AudioSource> _resolveAudioSource(
+    Song song,
+    String streamUrl,
+  ) async {
+    await _ensureCacheDir();
+
+    final cacheFile = File('${_cacheDir.path}/${song.id}');
+    if (await cacheFile.exists()) {
+      // Cache hit — play from local file instantly.
+      return AudioSource.uri(cacheFile.uri);
+    }
+    // Cache miss — stream while caching to a file named by song ID.
+    // Uses exactly 1× file bandwidth and persists across sessions.
+    // ignore: experimental_member_use
+    return LockCachingAudioSource(
+      Uri.parse(streamUrl),
+      cacheFile: File('${_cacheDir.path}/${song.id}'),
+    );
+  }
 
   Future<void> setQueueFromSongs(
     List<Song> songs,
@@ -52,24 +95,12 @@ class MusicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
     });
     queue.add(items);
 
-    final sources = await Future.wait(List.generate(songs.length, (i) async {
-      if (cacheManager != null) {
-        // Use the stable songId as the cache key so the URL's random salt
-        // doesn't break cache lookups across sessions.
-        final cacheKey = 'audio_${songs[i].id}';
-        final cached = await cacheManager!.getFileFromCache(cacheKey);
-        if (cached != null) {
-          // Cache hit — play from local file instantly.
-          return AudioSource.uri(cached.file.uri);
-        }
-        // Cache miss — stream from network and download in background
-        // so the next play is instant.
-        cacheManager!
-            .downloadFile(streamUrls[i], key: cacheKey)
-            .ignore();
-      }
-      return AudioSource.uri(Uri.parse(streamUrls[i]));
-    }));
+    final sources = await Future.wait(
+      List.generate(
+        songs.length,
+        (i) => _resolveAudioSource(songs[i], streamUrls[i]),
+      ),
+    );
 
     await _player.setAudioSources(sources, initialIndex: initialIndex);
     if (items.isNotEmpty) mediaItem.add(items[initialIndex]);
@@ -104,16 +135,23 @@ class MusicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
 
   @override
   Future<void> setShuffleMode(AudioServiceShuffleMode shuffleMode) async {
-    await _player.setShuffleModeEnabled(shuffleMode == AudioServiceShuffleMode.all);
+    await _player.setShuffleModeEnabled(
+      shuffleMode == AudioServiceShuffleMode.all,
+    );
   }
 
   @override
   Future<void> setRepeatMode(AudioServiceRepeatMode repeatMode) async {
-    await _player.setLoopMode(switch (repeatMode) {
-      AudioServiceRepeatMode.one => LoopMode.one,
-      AudioServiceRepeatMode.all => LoopMode.all,
-      _ => LoopMode.off,
-    });
+    LoopMode loopMode;
+    switch (repeatMode) {
+      case AudioServiceRepeatMode.one:
+        loopMode = LoopMode.one;
+      case AudioServiceRepeatMode.all:
+        loopMode = LoopMode.all;
+      case _:
+        loopMode = LoopMode.off;
+    }
+    await _player.setLoopMode(loopMode);
   }
 
   PlaybackState _transformEvent(PlaybackEvent event) {

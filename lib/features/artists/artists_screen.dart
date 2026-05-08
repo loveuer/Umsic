@@ -18,23 +18,26 @@ class ArtistsScreen extends ConsumerWidget {
       body: artistsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(e.toString())),
-        data: (artists) => ListView.builder(
-          itemCount: artists.length,
-          itemBuilder: (context, index) {
-            final artist = artists[index];
-            final clientAsync = ref.watch(navidromeClientProvider);
-            final coverUrl = artist.coverArt != null
-                ? clientAsync.valueOrNull?.coverArtUrl(artist.coverArt!, size: 100)
-                : null;
-            return ListTile(
-              leading: CoverArtImage(url: coverUrl, size: 48),
-              title: Text(artist.name),
-              subtitle: artist.albumCount != null
-                  ? Text('${artist.albumCount} 张专辑')
-                  : null,
-              onTap: () => context.push('/artists/${artist.id}'),
-            );
-          },
+        data: (artists) => RefreshIndicator(
+          onRefresh: () async => ref.invalidate(artistsProvider),
+          child: ListView.builder(
+            itemCount: artists.length,
+            itemBuilder: (context, index) {
+              final artist = artists[index];
+              final clientAsync = ref.watch(navidromeClientProvider);
+              final coverUrl = artist.coverArt != null
+                  ? clientAsync.valueOrNull?.coverArtUrl(artist.coverArt!, size: 100)
+                  : null;
+              return ListTile(
+                leading: CoverArtImage(url: coverUrl, size: 48),
+                title: Text(artist.name),
+                subtitle: artist.albumCount != null
+                    ? Text('${artist.albumCount} 张专辑')
+                    : null,
+                onTap: () => context.push('/artists/${artist.id}'),
+              );
+            },
+          ),
         ),
       ),
     );

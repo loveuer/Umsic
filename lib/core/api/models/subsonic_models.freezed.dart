@@ -2510,6 +2510,435 @@ abstract class _Starred2Result implements Starred2Result {
       throw _privateConstructorUsedError;
 }
 
+LyricsLine _$LyricsLineFromJson(Map<String, dynamic> json) {
+  return _LyricsLine.fromJson(json);
+}
+
+/// @nodoc
+mixin _$LyricsLine {
+  int get start => throw _privateConstructorUsedError;
+  String get value => throw _privateConstructorUsedError;
+
+  /// Serializes this LyricsLine to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of LyricsLine
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $LyricsLineCopyWith<LyricsLine> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $LyricsLineCopyWith<$Res> {
+  factory $LyricsLineCopyWith(
+    LyricsLine value,
+    $Res Function(LyricsLine) then,
+  ) = _$LyricsLineCopyWithImpl<$Res, LyricsLine>;
+  @useResult
+  $Res call({int start, String value});
+}
+
+/// @nodoc
+class _$LyricsLineCopyWithImpl<$Res, $Val extends LyricsLine>
+    implements $LyricsLineCopyWith<$Res> {
+  _$LyricsLineCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of LyricsLine
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? start = null, Object? value = null}) {
+    return _then(
+      _value.copyWith(
+            start: null == start
+                ? _value.start
+                : start // ignore: cast_nullable_to_non_nullable
+                      as int,
+            value: null == value
+                ? _value.value
+                : value // ignore: cast_nullable_to_non_nullable
+                      as String,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$LyricsLineImplCopyWith<$Res>
+    implements $LyricsLineCopyWith<$Res> {
+  factory _$$LyricsLineImplCopyWith(
+    _$LyricsLineImpl value,
+    $Res Function(_$LyricsLineImpl) then,
+  ) = __$$LyricsLineImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({int start, String value});
+}
+
+/// @nodoc
+class __$$LyricsLineImplCopyWithImpl<$Res>
+    extends _$LyricsLineCopyWithImpl<$Res, _$LyricsLineImpl>
+    implements _$$LyricsLineImplCopyWith<$Res> {
+  __$$LyricsLineImplCopyWithImpl(
+    _$LyricsLineImpl _value,
+    $Res Function(_$LyricsLineImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of LyricsLine
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? start = null, Object? value = null}) {
+    return _then(
+      _$LyricsLineImpl(
+        start: null == start
+            ? _value.start
+            : start // ignore: cast_nullable_to_non_nullable
+                  as int,
+        value: null == value
+            ? _value.value
+            : value // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$LyricsLineImpl implements _LyricsLine {
+  const _$LyricsLineImpl({required this.start, required this.value});
+
+  factory _$LyricsLineImpl.fromJson(Map<String, dynamic> json) =>
+      _$$LyricsLineImplFromJson(json);
+
+  @override
+  final int start;
+  @override
+  final String value;
+
+  @override
+  String toString() {
+    return 'LyricsLine(start: $start, value: $value)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$LyricsLineImpl &&
+            (identical(other.start, start) || other.start == start) &&
+            (identical(other.value, value) || other.value == value));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, start, value);
+
+  /// Create a copy of LyricsLine
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$LyricsLineImplCopyWith<_$LyricsLineImpl> get copyWith =>
+      __$$LyricsLineImplCopyWithImpl<_$LyricsLineImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$LyricsLineImplToJson(this);
+  }
+}
+
+abstract class _LyricsLine implements LyricsLine {
+  const factory _LyricsLine({
+    required final int start,
+    required final String value,
+  }) = _$LyricsLineImpl;
+
+  factory _LyricsLine.fromJson(Map<String, dynamic> json) =
+      _$LyricsLineImpl.fromJson;
+
+  @override
+  int get start;
+  @override
+  String get value;
+
+  /// Create a copy of LyricsLine
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$LyricsLineImplCopyWith<_$LyricsLineImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+StructuredLyrics _$StructuredLyricsFromJson(Map<String, dynamic> json) {
+  return _StructuredLyrics.fromJson(json);
+}
+
+/// @nodoc
+mixin _$StructuredLyrics {
+  String get displayTitle => throw _privateConstructorUsedError;
+  String get displayArtist => throw _privateConstructorUsedError;
+  String get lang => throw _privateConstructorUsedError;
+  bool get synced => throw _privateConstructorUsedError;
+  List<LyricsLine> get line => throw _privateConstructorUsedError;
+
+  /// Serializes this StructuredLyrics to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of StructuredLyrics
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $StructuredLyricsCopyWith<StructuredLyrics> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $StructuredLyricsCopyWith<$Res> {
+  factory $StructuredLyricsCopyWith(
+    StructuredLyrics value,
+    $Res Function(StructuredLyrics) then,
+  ) = _$StructuredLyricsCopyWithImpl<$Res, StructuredLyrics>;
+  @useResult
+  $Res call({
+    String displayTitle,
+    String displayArtist,
+    String lang,
+    bool synced,
+    List<LyricsLine> line,
+  });
+}
+
+/// @nodoc
+class _$StructuredLyricsCopyWithImpl<$Res, $Val extends StructuredLyrics>
+    implements $StructuredLyricsCopyWith<$Res> {
+  _$StructuredLyricsCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of StructuredLyrics
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? displayTitle = null,
+    Object? displayArtist = null,
+    Object? lang = null,
+    Object? synced = null,
+    Object? line = null,
+  }) {
+    return _then(
+      _value.copyWith(
+            displayTitle: null == displayTitle
+                ? _value.displayTitle
+                : displayTitle // ignore: cast_nullable_to_non_nullable
+                      as String,
+            displayArtist: null == displayArtist
+                ? _value.displayArtist
+                : displayArtist // ignore: cast_nullable_to_non_nullable
+                      as String,
+            lang: null == lang
+                ? _value.lang
+                : lang // ignore: cast_nullable_to_non_nullable
+                      as String,
+            synced: null == synced
+                ? _value.synced
+                : synced // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            line: null == line
+                ? _value.line
+                : line // ignore: cast_nullable_to_non_nullable
+                      as List<LyricsLine>,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$StructuredLyricsImplCopyWith<$Res>
+    implements $StructuredLyricsCopyWith<$Res> {
+  factory _$$StructuredLyricsImplCopyWith(
+    _$StructuredLyricsImpl value,
+    $Res Function(_$StructuredLyricsImpl) then,
+  ) = __$$StructuredLyricsImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({
+    String displayTitle,
+    String displayArtist,
+    String lang,
+    bool synced,
+    List<LyricsLine> line,
+  });
+}
+
+/// @nodoc
+class __$$StructuredLyricsImplCopyWithImpl<$Res>
+    extends _$StructuredLyricsCopyWithImpl<$Res, _$StructuredLyricsImpl>
+    implements _$$StructuredLyricsImplCopyWith<$Res> {
+  __$$StructuredLyricsImplCopyWithImpl(
+    _$StructuredLyricsImpl _value,
+    $Res Function(_$StructuredLyricsImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of StructuredLyrics
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? displayTitle = null,
+    Object? displayArtist = null,
+    Object? lang = null,
+    Object? synced = null,
+    Object? line = null,
+  }) {
+    return _then(
+      _$StructuredLyricsImpl(
+        displayTitle: null == displayTitle
+            ? _value.displayTitle
+            : displayTitle // ignore: cast_nullable_to_non_nullable
+                  as String,
+        displayArtist: null == displayArtist
+            ? _value.displayArtist
+            : displayArtist // ignore: cast_nullable_to_non_nullable
+                  as String,
+        lang: null == lang
+            ? _value.lang
+            : lang // ignore: cast_nullable_to_non_nullable
+                  as String,
+        synced: null == synced
+            ? _value.synced
+            : synced // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        line: null == line
+            ? _value._line
+            : line // ignore: cast_nullable_to_non_nullable
+                  as List<LyricsLine>,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$StructuredLyricsImpl implements _StructuredLyrics {
+  const _$StructuredLyricsImpl({
+    required this.displayTitle,
+    required this.displayArtist,
+    required this.lang,
+    this.synced = false,
+    required final List<LyricsLine> line,
+  }) : _line = line;
+
+  factory _$StructuredLyricsImpl.fromJson(Map<String, dynamic> json) =>
+      _$$StructuredLyricsImplFromJson(json);
+
+  @override
+  final String displayTitle;
+  @override
+  final String displayArtist;
+  @override
+  final String lang;
+  @override
+  @JsonKey()
+  final bool synced;
+  final List<LyricsLine> _line;
+  @override
+  List<LyricsLine> get line {
+    if (_line is EqualUnmodifiableListView) return _line;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_line);
+  }
+
+  @override
+  String toString() {
+    return 'StructuredLyrics(displayTitle: $displayTitle, displayArtist: $displayArtist, lang: $lang, synced: $synced, line: $line)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$StructuredLyricsImpl &&
+            (identical(other.displayTitle, displayTitle) ||
+                other.displayTitle == displayTitle) &&
+            (identical(other.displayArtist, displayArtist) ||
+                other.displayArtist == displayArtist) &&
+            (identical(other.lang, lang) || other.lang == lang) &&
+            (identical(other.synced, synced) || other.synced == synced) &&
+            const DeepCollectionEquality().equals(other._line, _line));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(
+    runtimeType,
+    displayTitle,
+    displayArtist,
+    lang,
+    synced,
+    const DeepCollectionEquality().hash(_line),
+  );
+
+  /// Create a copy of StructuredLyrics
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$StructuredLyricsImplCopyWith<_$StructuredLyricsImpl> get copyWith =>
+      __$$StructuredLyricsImplCopyWithImpl<_$StructuredLyricsImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$StructuredLyricsImplToJson(this);
+  }
+}
+
+abstract class _StructuredLyrics implements StructuredLyrics {
+  const factory _StructuredLyrics({
+    required final String displayTitle,
+    required final String displayArtist,
+    required final String lang,
+    final bool synced,
+    required final List<LyricsLine> line,
+  }) = _$StructuredLyricsImpl;
+
+  factory _StructuredLyrics.fromJson(Map<String, dynamic> json) =
+      _$StructuredLyricsImpl.fromJson;
+
+  @override
+  String get displayTitle;
+  @override
+  String get displayArtist;
+  @override
+  String get lang;
+  @override
+  bool get synced;
+  @override
+  List<LyricsLine> get line;
+
+  /// Create a copy of StructuredLyrics
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$StructuredLyricsImplCopyWith<_$StructuredLyricsImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
 SearchResult _$SearchResultFromJson(Map<String, dynamic> json) {
   return _SearchResult.fromJson(json);
 }

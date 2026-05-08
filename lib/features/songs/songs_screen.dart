@@ -17,56 +17,59 @@ class SongsScreen extends ConsumerWidget {
       body: songsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _ErrorView(error: e, onRetry: () => ref.invalidate(songsProvider)),
-        data: (songs) => CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Row(
-                  children: [
-                    Text(
-                      '${songs.length} 首歌曲',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const Spacer(),
-                    FilledButton.icon(
-                      onPressed: songs.isEmpty
-                          ? null
-                          : () => ref
-                              .read(playerControllerProvider.notifier)
-                              .playSongs(songs),
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Text('全部播放'),
-                    ),
-                  ],
+        data: (songs) => RefreshIndicator(
+          onRefresh: () async => ref.invalidate(songsProvider),
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Row(
+                    children: [
+                      Text(
+                        '${songs.length} 首歌曲',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const Spacer(),
+                      FilledButton.icon(
+                        onPressed: songs.isEmpty
+                            ? null
+                            : () => ref
+                                .read(playerControllerProvider.notifier)
+                                .playSongs(songs),
+                        icon: const Icon(Icons.play_arrow),
+                        label: const Text('全部播放'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final song = songs[index];
-                  return Consumer(
-                    builder: (context, ref, _) {
-                      final clientAsync = ref.watch(navidromeClientProvider);
-                      final coverUrl = clientAsync.valueOrNull?.coverArtUrl(
-                        song.coverArt ?? '',
-                        size: 100,
-                      );
-                      return SongListTile(
-                        song: song,
-                        coverArtUrl: song.coverArt != null ? coverUrl : null,
-                        onTap: () => ref
-                            .read(playerControllerProvider.notifier)
-                            .playSongs(songs, startIndex: index),
-                      );
-                    },
-                  );
-                },
-                childCount: songs.length,
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final song = songs[index];
+                    return Consumer(
+                      builder: (context, ref, _) {
+                        final clientAsync = ref.watch(navidromeClientProvider);
+                        final coverUrl = clientAsync.valueOrNull?.coverArtUrl(
+                          song.coverArt ?? '',
+                          size: 100,
+                        );
+                        return SongListTile(
+                          song: song,
+                          coverArtUrl: song.coverArt != null ? coverUrl : null,
+                          onTap: () => ref
+                              .read(playerControllerProvider.notifier)
+                              .playSongs(songs, startIndex: index),
+                        );
+                      },
+                    );
+                  },
+                  childCount: songs.length,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

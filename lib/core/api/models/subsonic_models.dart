@@ -155,6 +155,33 @@ class Starred2Result with _$Starred2Result {
       _$Starred2ResultFromJson(json);
 }
 
+// ─── Lyrics ───────────────────────────────────────────────────────────────────
+
+@freezed
+class LyricsLine with _$LyricsLine {
+  const factory LyricsLine({
+    required int start,
+    required String value,
+  }) = _LyricsLine;
+
+  factory LyricsLine.fromJson(Map<String, dynamic> json) =>
+      _$LyricsLineFromJson(json);
+}
+
+@freezed
+class StructuredLyrics with _$StructuredLyrics {
+  const factory StructuredLyrics({
+    required String displayTitle,
+    required String displayArtist,
+    required String lang,
+    @Default(false) bool synced,
+    required List<LyricsLine> line,
+  }) = _StructuredLyrics;
+
+  factory StructuredLyrics.fromJson(Map<String, dynamic> json) =>
+      _$StructuredLyricsFromJson(json);
+}
+
 // ─── Search ───────────────────────────────────────────────────────────────────
 
 @freezed
