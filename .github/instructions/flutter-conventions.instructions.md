@@ -1,6 +1,6 @@
 ---
 applyTo: "lib/**/*.dart"
-description: "Flutter Dart conventions for the mUsic project"
+description: "Flutter Dart conventions for the Umsic project"
 ---
 
 # Flutter / Dart Conventions

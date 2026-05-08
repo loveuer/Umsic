@@ -39,14 +39,14 @@ jobs:
         run: |
           TAG=${GITHUB_REF_NAME}
           mv build/app/outputs/flutter-apk/app-release.apk \
-             build/app/outputs/flutter-apk/mUsic-${TAG}.apk
+             build/app/outputs/flutter-apk/Umsic-${TAG}.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: mUsic ${{ github.ref_name }}
+          name: Umsic ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
-          files: build/app/outputs/flutter-apk/mUsic-${{ github.ref_name }}.apk
+          files: build/app/outputs/flutter-apk/Umsic-${{ github.ref_name }}.apk
           generate_release_notes: true

@@ -1,6 +1,6 @@
 {
-    "name": "music",
-    "short_name": "music",
+    "name": "Umsic",
+    "short_name": "Umsic",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

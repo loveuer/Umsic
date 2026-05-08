@@ -21,8 +21,8 @@ Future<void> main() async {
   final handler = await AudioService.init(
     builder: () => MusicAudioHandler(),
     config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.mUsic.audio',
-      androidNotificationChannelName: 'mUsic Playback',
+      androidNotificationChannelId: 'com.umsic.audio',
+      androidNotificationChannelName: 'Umsic Playback',
       androidNotificationOngoing: true,
       androidStopForegroundOnPause: true,
     ),
@@ -49,7 +49,7 @@ class MusicApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'mUsic',
+      title: 'Umsic',
       theme: buildTheme(dark: false),
       darkTheme: buildTheme(dark: true),
       routerConfig: router,

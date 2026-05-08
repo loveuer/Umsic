@@ -7,7 +7,7 @@ description: >
 
 # Add Navidrome API Endpoint
 
-Implement a new OpenSubsonic API call in the mUsic client.
+Implement a new OpenSubsonic API call in the Umsic client.
 
 ## Steps
 
@@ -67,7 +67,7 @@ class SomeWidget extends ConsumerWidget {
 
 ## Authentication Reference
 Every request automatically includes auth params via `_authParams`:
-- `u`, `t` (MD5 token), `s` (salt), `v=1.16.1`, `c=mUsic`, `f=json`
+- `u`, `t` (MD5 token), `s` (salt), `v=1.16.1`, `c=Umsic`, `f=json`
 
 ## OpenSubsonic Docs
 - Full API reference: https://opensubsonic.netlify.app/docs/endpoints/

@@ -55,7 +55,7 @@ class NavidromeClient {
       't': token,
       's': salt,
       'v': '1.16.1',
-      'c': 'mUsic',
+      'c': 'Umsic',
       'f': 'json',
     };
   }

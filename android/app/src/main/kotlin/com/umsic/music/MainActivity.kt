@@ -1,4 +1,4 @@
-package com.mUsic.music
+package com.umsic.music
 
 import com.ryanheise.audioservice.AudioServiceActivity
 

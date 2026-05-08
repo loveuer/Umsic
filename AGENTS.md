@@ -1,4 +1,4 @@
-# mUsic — Flutter Music Client for Navidrome
+# Umsic — Flutter Music Client for Navidrome
 
 A Flutter music client app connecting to a self-hosted [Navidrome](https://www.navidrome.org/) server via the [OpenSubsonic API](https://opensubsonic.netlify.app/docs/).
 
@@ -57,10 +57,10 @@ Use **Riverpod** (`flutter_riverpod` + `riverpod_annotation`) throughout:
 
 **Authentication** — append to every request:
 ```
-u={username}&t={md5(password+salt)}&s={salt}&v=1.16.1&c=mUsic&f=json
+u={username}&t={md5(password+salt)}&s={salt}&v=1.16.1&c=Umsic&f=json
 ```
 - `t` = MD5 of `password + salt` (NOT the raw password)
-- `c` = client name (`mUsic`)
+- `c` = client name (`Umsic`)
 - `f=json` always
 
 **Common endpoints**:
