@@ -54,3 +54,4 @@ app.*.map.json
 # Local override files
 pubspec_overrides.yaml
 
+dist/

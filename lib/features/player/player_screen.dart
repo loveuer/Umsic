@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,9 +21,25 @@ class PlayerScreen extends ConsumerStatefulWidget {
 
 class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   final _pageController = PageController();
+  StreamSubscription<int?>? _indexSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Sync player's current index to Riverpod so lyrics update on skip.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final handler = ref.read(audioHandlerProvider);
+      _indexSub = handler.player.currentIndexStream.listen((idx) {
+        if (idx != null) {
+          ref.read(currentIndexProvider.notifier).set(idx);
+        }
+      });
+    });
+  }
 
   @override
   void dispose() {
+    _indexSub?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -109,52 +127,43 @@ class _PlayerView extends ConsumerWidget {
                       ),
                     ),
 
-                    // Title / Artist + Favorite
+                    // Title / Artist
                     Expanded(
                       flex: 2,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            SizedBox(
-                              width: double.infinity,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    media?.title ?? '未播放',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall
-                                        ?.copyWith(fontWeight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    media?.artist ?? '',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
-                                        ?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                        ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                media?.title ?? '未播放',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
                               ),
-                            ),
-                            Positioned(
-                              right: 0,
-                              child: _FavoriteButton(songId: currentSongId),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                media?.artist ?? '',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -212,7 +221,7 @@ class _PlayerView extends ConsumerWidget {
                       ),
                     ),
 
-                    // Play mode + queue row
+                    // Play mode + favorite + queue row
                     Padding(
                       padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
                       child: Row(
@@ -244,6 +253,9 @@ class _PlayerView extends ConsumerWidget {
                             onPressed: () =>
                                 ref.read(playModeNotifierProvider.notifier).cycle(),
                           ),
+
+                          // Favorite button
+                          _FavoriteButton(songId: currentSongId),
 
                           // Queue button
                           IconButton(

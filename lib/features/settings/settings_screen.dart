@@ -54,7 +54,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _loadCacheSize() async {
     final mb = await ref.read(cacheMaxSizeMbProvider.future);
-    if (mounted) setState(() => _cacheSizeGb = (mb / 1024).round().clamp(1, 20));
+    if (mounted) {
+      setState(() => _cacheSizeGb = (mb / 1024).round().clamp(1, 20));
+    }
   }
 
   @override
@@ -67,7 +69,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
     try {
       final url = _urlController.text.trim().replaceAll(RegExp(r'/$'), '');
@@ -85,16 +90,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Save credentials
       final storage = ref.read(settingsStorageProvider);
       await storage.saveCredentials(
-        ServerCredentials(serverUrl: url, username: username, password: password),
+        ServerCredentials(
+          serverUrl: url,
+          username: username,
+          password: password,
+        ),
       );
 
       // Invalidate client so it reloads with new credentials
       ref.invalidate(navidromeClientProvider);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('连接成功，设置已保存')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('连接成功，设置已保存')));
         context.go('/songs');
       }
     } catch (e) {
@@ -116,16 +125,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await imageMgr.emptyCache();
       final tempDir = await getTemporaryDirectory();
       // Clear image cache files
-      final imageDir = Directory('${tempDir.path}/${MusicImageCacheManager.cacheKey}');
+      final imageDir = Directory(
+        '${tempDir.path}/${MusicImageCacheManager.cacheKey}',
+      );
       if (await imageDir.exists()) await imageDir.delete(recursive: true);
-      // Clear audio cache files (LockCachingAudioSource directory)
+      // Clear audio cache files.
       final audioDir = Directory('${tempDir.path}/audio_cache');
       if (await audioDir.exists()) await audioDir.delete(recursive: true);
       ref.invalidate(cacheUsageBytesProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('缓存已清除')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('缓存已清除')));
       }
     } finally {
       if (mounted) setState(() => _clearingCache = false);
@@ -142,9 +153,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // ── Server settings ──────────────────────────────────────────
-            Text('服务器', style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            )),
+            Text(
+              '服务器',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             Form(
               key: _formKey,
@@ -163,7 +177,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     autocorrect: false,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return '请输入服务器地址';
-                      if (!v.trim().startsWith('http')) return '地址需以 http:// 或 https:// 开头';
+                      if (!v.trim().startsWith('http')) {
+                        return '地址需以 http:// 或 https:// 开头';
+                      }
                       return null;
                     },
                   ),
@@ -176,7 +192,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       border: OutlineInputBorder(),
                     ),
                     autocorrect: false,
-                    validator: (v) => v == null || v.trim().isEmpty ? '请输入用户名' : null,
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? '请输入用户名' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -186,8 +203,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       prefixIcon: const Icon(Icons.lock),
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                     ),
                     obscureText: _obscurePassword,
@@ -197,7 +220,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     const SizedBox(height: 12),
                     Text(
                       _error!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ],
                   const SizedBox(height: 24),
@@ -220,9 +245,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 32),
             const Divider(),
             const SizedBox(height: 16),
-            Text('缓存', style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            )),
+            Text(
+              '缓存',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
 
             // Max cache size slider
@@ -242,7 +270,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
             ),
             Slider(
-              value: (_cacheSizeGb ?? kDefaultCacheMaxSizeMb ~/ 1024).toDouble(),
+              value: (_cacheSizeGb ?? kDefaultCacheMaxSizeMb ~/ 1024)
+                  .toDouble(),
               min: 1,
               max: 20,
               divisions: 19,
@@ -274,7 +303,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     const Spacer(),
                     usageAsync.when(
                       loading: () => const SizedBox(
-                        width: 16, height: 16,
+                        width: 16,
+                        height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                       error: (e, s) => const Text('—'),
@@ -293,7 +323,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             OutlinedButton.icon(
               onPressed: _clearingCache ? null : _clearCache,
               icon: _clearingCache
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Icon(Icons.delete_outline),
               label: const Text('清除缓存'),
             ),
@@ -306,7 +340,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _formatBytes(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
   }
 }

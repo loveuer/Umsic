@@ -5,6 +5,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../api/models/subsonic_models.dart';
+import 'single_download_cache_source.dart';
 
 MediaItem songToMediaItem(Song song, String streamUrl, {String? coverArtUrl}) {
   return MediaItem(
@@ -30,7 +31,8 @@ Future<void> _cleanStaleCacheFiles(Directory cacheDir) async {
   }
 }
 
-class MusicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
+class MusicAudioHandler extends BaseAudioHandler
+    with QueueHandler, SeekHandler {
   MusicAudioHandler() {
     _player.setLoopMode(LoopMode.all);
     _player.playbackEventStream.map(_transformEvent).pipe(playbackState);
@@ -62,8 +64,9 @@ class MusicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
 
   Future<AudioSource> _resolveAudioSource(
     Song song,
-    String streamUrl,
-  ) async {
+    String streamUrl, {
+    bool cacheWhileStreaming = false,
+  }) async {
     await _ensureCacheDir();
 
     final cacheFile = File('${_cacheDir.path}/${song.id}');
@@ -71,13 +74,17 @@ class MusicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
       // Cache hit — play from local file instantly.
       return AudioSource.uri(cacheFile.uri);
     }
-    // Cache miss — stream while caching to a file named by song ID.
-    // Uses exactly 1× file bandwidth and persists across sessions.
-    // ignore: experimental_member_use
-    return LockCachingAudioSource(
-      Uri.parse(streamUrl),
-      cacheFile: File('${_cacheDir.path}/${song.id}'),
-    );
+
+    if (cacheWhileStreaming) {
+      return SingleDownloadCachingAudioSource(
+        Uri.parse(streamUrl),
+        cacheFile: cacheFile,
+      );
+    }
+
+    // Queue items that are not selected yet stay direct streams. This avoids
+    // preparing the whole queue through just_audio's local proxy up front.
+    return AudioSource.uri(Uri.parse(streamUrl));
   }
 
   Future<void> setQueueFromSongs(
@@ -98,7 +105,11 @@ class MusicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
     final sources = await Future.wait(
       List.generate(
         songs.length,
-        (i) => _resolveAudioSource(songs[i], streamUrls[i]),
+        (i) => _resolveAudioSource(
+          songs[i],
+          streamUrls[i],
+          cacheWhileStreaming: i == initialIndex,
+        ),
       ),
     );
 

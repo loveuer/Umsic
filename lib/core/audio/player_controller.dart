@@ -28,7 +28,7 @@ class PlayerQueue extends _$PlayerQueue {
   void clear() => state = [];
 }
 
-/// Current index in queue
+/// Current index in queue — auto-synced from the player's currentIndexStream.
 @Riverpod(keepAlive: true)
 class CurrentIndex extends _$CurrentIndex {
   @override
