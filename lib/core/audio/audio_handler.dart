@@ -1,10 +1,14 @@
 import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:drift/drift.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/models/subsonic_models.dart';
+import '../database/app_database.dart';
+import '../storage/cache_manager.dart';
 import 'single_download_cache_source.dart';
 
 MediaItem songToMediaItem(Song song, String streamUrl, {String? coverArtUrl}) {
@@ -50,6 +54,24 @@ class MusicAudioHandler extends BaseAudioHandler
 
   late Directory _cacheDir;
   bool _cacheInitialized = false;
+  AppDatabase? _db;
+  final Map<String, Song> _songById = {};
+
+  void setDatabase(AppDatabase db) {
+    _db = db;
+  }
+
+  /// The audio cache directory (available after first _ensureCacheDir call).
+  Future<Directory> get cacheDir async {
+    await _ensureCacheDir();
+    return _cacheDir;
+  }
+
+  /// The cache file for a given song ID.
+  Future<File> cacheFileForSong(String songId) async {
+    await _ensureCacheDir();
+    return File('${_cacheDir.path}/$songId');
+  }
 
   Future<void> _ensureCacheDir() async {
     if (_cacheInitialized) return;
@@ -71,7 +93,7 @@ class MusicAudioHandler extends BaseAudioHandler
 
     final cacheFile = File('${_cacheDir.path}/${song.id}');
     if (await cacheFile.exists()) {
-      // Cache hit — play from local file instantly.
+      _touchCachedSong(song.id);
       return AudioSource.uri(cacheFile.uri);
     }
 
@@ -79,12 +101,140 @@ class MusicAudioHandler extends BaseAudioHandler
       return SingleDownloadCachingAudioSource(
         Uri.parse(streamUrl),
         cacheFile: cacheFile,
+        onComplete: () => _onSongCached(song),
       );
     }
 
-    // Queue items that are not selected yet stay direct streams. This avoids
-    // preparing the whole queue through just_audio's local proxy up front.
+    // Non-current songs stream directly — avoids proxy overhead for the
+    // entire queue. Background caching is triggered by _onSongChanged.
     return AudioSource.uri(Uri.parse(streamUrl));
+  }
+
+  Future<void> _onSongCached(Song song) async {
+    if (_db == null) return;
+    try {
+      await _ensureCacheDir();
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final cacheFile = File('${_cacheDir.path}/${song.id}');
+      final fileExists = await cacheFile.exists();
+      final fileSize = fileExists ? await cacheFile.length() : song.size;
+
+      await _db!.insertOrUpdate(
+        CachedSongsCompanion.insert(
+          id: song.id,
+          title: song.title,
+          artist: Value(song.artist),
+          artistId: Value(song.artistId),
+          album: Value(song.album),
+          albumId: Value(song.albumId),
+          coverArt: Value(song.coverArt),
+          duration: Value(song.duration),
+          track: Value(song.track),
+          year: Value(song.year),
+          genre: Value(song.genre),
+          contentType: Value(song.contentType),
+          suffix: Value(song.suffix),
+          size: Value(fileSize),
+          bitRate: Value(song.bitRate),
+          starred: Value(song.starred),
+          cachedAt: now,
+          lastAccessedAt: now,
+          filePath: cacheFile.path,
+        ),
+      );
+      _evictIfNeeded();
+    } catch (_) {
+      // Non-critical — cache file exists on disk, DB entry is just metadata
+    }
+  }
+
+  void _touchCachedSong(String songId) async {
+    if (_db == null) return;
+    try {
+      await _db!.updateLastAccessed(songId);
+    } catch (_) {}
+  }
+
+  /// Manually download a song for offline playback.
+  Future<void> cacheSong(Song song, String streamUrl) async {
+    await _ensureCacheDir();
+    final cacheFile = File('${_cacheDir.path}/${song.id}');
+    if (await cacheFile.exists()) {
+      // Already cached on disk — just ensure DB entry
+      await _onSongCachedWithFlag(song, isDownload: true);
+      return;
+    }
+
+    // Direct HTTP download — no just_audio proxy needed.
+    final partialFile = File('${cacheFile.path}.part');
+    try {
+      final client = HttpClient();
+      final request = await client.getUrl(Uri.parse(streamUrl));
+      final response = await request.close();
+      if (response.statusCode != 200) {
+        client.close();
+        throw Exception('HTTP ${response.statusCode}');
+      }
+      await partialFile.create(recursive: true);
+      final sink = partialFile.openWrite();
+      await sink.addStream(response);
+      await sink.flush();
+      await sink.close();
+      client.close();
+      await partialFile.rename(cacheFile.path);
+      await _onSongCachedWithFlag(song, isDownload: true);
+    } catch (_) {
+      if (await partialFile.exists()) await partialFile.delete();
+      rethrow;
+    }
+  }
+
+  Future<void> _onSongCachedWithFlag(Song song, {bool isDownload = false}) async {
+    if (_db == null) return;
+    try {
+      await _ensureCacheDir();
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final cacheFile = File('${_cacheDir.path}/${song.id}');
+      final fileExists = await cacheFile.exists();
+      final fileSize = fileExists ? await cacheFile.length() : song.size;
+
+      await _db!.insertOrUpdate(
+        CachedSongsCompanion.insert(
+          id: song.id,
+          title: song.title,
+          artist: Value(song.artist),
+          artistId: Value(song.artistId),
+          album: Value(song.album),
+          albumId: Value(song.albumId),
+          coverArt: Value(song.coverArt),
+          duration: Value(song.duration),
+          track: Value(song.track),
+          year: Value(song.year),
+          genre: Value(song.genre),
+          contentType: Value(song.contentType),
+          suffix: Value(song.suffix),
+          size: Value(fileSize),
+          bitRate: Value(song.bitRate),
+          starred: Value(song.starred),
+          cachedAt: now,
+          lastAccessedAt: now,
+          filePath: cacheFile.path,
+          isDownload: Value(isDownload),
+        ),
+      );
+      _evictIfNeeded();
+    } catch (_) {
+      // Non-critical
+    }
+  }
+
+  Future<void> _evictIfNeeded() async {
+    if (_db == null) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final maxMb = prefs.getInt(kCacheMaxSizeMbKey) ?? kDefaultCacheMaxSizeMb;
+      await evictCacheIfNeeded(_db!, maxMb * 1024 * 1024);
+    } catch (_) {}
   }
 
   Future<void> setQueueFromSongs(
@@ -93,6 +243,10 @@ class MusicAudioHandler extends BaseAudioHandler
     List<String?>? coverArtUrls,
     int initialIndex = 0,
   }) async {
+    for (final song in songs) {
+      _songById[song.id] = song;
+    }
+
     final items = List.generate(songs.length, (i) {
       return songToMediaItem(
         songs[i],
@@ -108,6 +262,8 @@ class MusicAudioHandler extends BaseAudioHandler
         (i) => _resolveAudioSource(
           songs[i],
           streamUrls[i],
+          // Only the current song uses the caching source (1:1 traffic).
+          // Other songs stream directly; _onSongChanged handles background caching.
           cacheWhileStreaming: i == initialIndex,
         ),
       ),

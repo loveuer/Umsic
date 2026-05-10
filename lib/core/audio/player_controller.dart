@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../api/models/subsonic_models.dart';
 import '../api/navidrome_client.dart';
+import '../database/database_provider.dart';
 import 'audio_handler.dart';
 
 part 'player_controller.g.dart';
@@ -99,6 +100,31 @@ class PlayerController extends _$PlayerController {
   }
 
   Future<void> playOne(Song song) => playSongs([song]);
+}
+
+/// Download manager — keepAlive so downloads survive navigation.
+@Riverpod(keepAlive: true)
+class DownloadManager extends _$DownloadManager {
+  @override
+  void build() {}
+
+  Future<void> downloadSong(Song song) async {
+    final handler = ref.read(audioHandlerProvider);
+    try {
+      final client = await ref.read(navidromeClientProvider.future);
+      await handler.cacheSong(song, client.streamUrl(song.id));
+    } catch (e) {
+      // Will be caught by the caller for UI feedback
+      rethrow;
+    }
+  }
+}
+
+/// Whether a song is currently cached locally — watches DB reactively.
+@riverpod
+Stream<bool> isSongCached(IsSongCachedRef ref, String songId) async* {
+  final db = ref.watch(appDatabaseProvider);
+  yield* db.watchAll().map((rows) => rows.any((r) => r.id == songId));
 }
 
 /// Current song's lyrics

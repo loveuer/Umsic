@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:crypto/crypto.dart';
 import 'package:just_audio/just_audio.dart';
@@ -19,6 +20,7 @@ class SingleDownloadCachingAudioSource extends StreamAudioSource {
   final Uri uri;
   final Map<String, String>? headers;
   final Future<File> cacheFile;
+  final VoidCallback? onComplete;
 
   // Download state
   int? _sourceLength;
@@ -35,6 +37,7 @@ class SingleDownloadCachingAudioSource extends StreamAudioSource {
     this.uri, {
     this.headers,
     File? cacheFile,
+    this.onComplete,
     super.tag,
   }) : cacheFile = cacheFile != null
            ? Future.value(cacheFile)
@@ -177,6 +180,7 @@ class SingleDownloadCachingAudioSource extends StreamAudioSource {
       await partialFile.rename(finalFile.path);
 
       _downloadComplete = true;
+      onComplete?.call();
       if (!(_downloadCompleter?.isCompleted ?? true)) {
         _downloadCompleter?.complete();
       }

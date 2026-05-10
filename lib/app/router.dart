@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../features/albums/albums_screen.dart';
 import '../features/artists/artists_screen.dart';
+import '../features/downloads/downloads_screen.dart';
 import '../features/player/player_screen.dart';
 import '../features/playlists/playlists_screen.dart';
 import '../features/settings/settings_screen.dart';
@@ -61,6 +62,12 @@ GoRouter router(RouterRef ref) {
                       PlaylistDetailScreen(playlistId: state.pathParameters['id']!),
                 ),
               ],
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/downloads',
+              builder: (context, state) => const DownloadsScreen(),
             ),
           ]),
         ],

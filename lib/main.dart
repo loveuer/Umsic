@@ -7,17 +7,20 @@ import 'app/router.dart';
 import 'app/theme.dart';
 import 'core/audio/audio_handler.dart';
 import 'core/audio/player_controller.dart';
+import 'core/database/app_database.dart';
+import 'core/database/database_provider.dart';
 import 'core/storage/cache_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Create image cache manager only — audio cache is managed by MusicAudioHandler.
   final prefs = await SharedPreferences.getInstance();
   final maxSizeMb = prefs.getInt(kCacheMaxSizeMbKey) ?? kDefaultCacheMaxSizeMb;
   final imageMgr = MusicImageCacheManager(
     maxObjects: imageObjectsFromMb(maxSizeMb),
   );
+
+  final db = AppDatabase();
 
   final handler = await AudioService.init(
     builder: () => MusicAudioHandler(),
@@ -28,12 +31,14 @@ Future<void> main() async {
       androidStopForegroundOnPause: true,
     ),
   );
+  handler.setDatabase(db);
 
   runApp(
     ProviderScope(
       overrides: [
         audioHandlerProvider.overrideWithValue(handler),
         imageCacheManagerProvider.overrideWithValue(imageMgr),
+        appDatabaseProvider.overrideWithValue(db),
       ],
       child: const MusicApp(),
     ),

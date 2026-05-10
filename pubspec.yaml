@@ -54,6 +54,12 @@ dependencies:
 
   # Persistence
   shared_preferences: ^2.3.5
+  drift: ^2.22.0
+  drift_flutter: ^0.2.4
+  sqlite3_flutter_libs: ^0.5.28
+
+  # Connectivity
+  connectivity_plus: ^6.1.4
 
   # Models
   freezed_annotation: ^2.4.4
@@ -72,6 +78,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   build_runner: ^2.4.14
+  drift_dev: ^2.22.0
   riverpod_generator: ^2.6.4
   freezed: ^2.5.8
   json_serializable: ^6.9.5

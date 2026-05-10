@@ -14,6 +14,7 @@ class MainShell extends ConsumerWidget {
     (label: '歌手', icon: Icons.person_outlined, activeIcon: Icons.person),
     (label: '专辑', icon: Icons.album_outlined, activeIcon: Icons.album),
     (label: '歌单', icon: Icons.queue_music_outlined, activeIcon: Icons.queue_music),
+    (label: '已下载', icon: Icons.download_outlined, activeIcon: Icons.download),
   ];
 
   @override

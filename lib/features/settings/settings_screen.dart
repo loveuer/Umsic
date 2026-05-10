@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/api/navidrome_client.dart';
+import '../../core/database/database_provider.dart';
 import '../../core/storage/cache_manager.dart';
 import '../../core/storage/settings_storage.dart';
 
@@ -132,6 +133,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Clear audio cache files.
       final audioDir = Directory('${tempDir.path}/audio_cache');
       if (await audioDir.exists()) await audioDir.delete(recursive: true);
+      // Clear cache metadata in database
+      final db = ref.read(appDatabaseProvider);
+      await db.deleteAll();
       ref.invalidate(cacheUsageBytesProvider);
       if (mounted) {
         ScaffoldMessenger.of(
@@ -284,7 +288,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   : (v) => _onCacheSizeChanged(v.round()),
             ),
             Text(
-              '更改缓存上限将在重启应用后生效',
+              '超出缓存上限时将自动删除最旧的缓存',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

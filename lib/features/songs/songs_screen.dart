@@ -58,6 +58,7 @@ class SongsScreen extends ConsumerWidget {
                         return SongListTile(
                           song: song,
                           coverArtUrl: song.coverArt != null ? coverUrl : null,
+                          showDownloadAction: true,
                           onTap: () => ref
                               .read(playerControllerProvider.notifier)
                               .playSongs(songs, startIndex: index),

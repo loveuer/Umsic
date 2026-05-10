@@ -5,6 +5,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../database/app_database.dart';
+import '../database/database_provider.dart';
+
 part 'cache_manager.g.dart';
 
 const String kCacheMaxSizeMbKey = 'cache_max_size_mb';
@@ -55,16 +58,46 @@ class CacheMaxSizeMb extends _$CacheMaxSizeMb {
 
 @riverpod
 Future<int> cacheUsageBytes(CacheUsageBytesRef ref) async {
+  final db = ref.watch(appDatabaseProvider);
+  final audioBytes = await db.totalCacheSize();
+
+  // Also count image cache
   final tempDir = await getTemporaryDirectory();
-  int total = 0;
-  final dir = Directory(tempDir.path);
-  if (!await dir.exists()) return 0;
-  await for (final entity in dir.list(recursive: true)) {
-    if (entity is File) {
-      try {
-        total += await entity.length();
-      } catch (_) {}
+  final imageDir = Directory('${tempDir.path}/${MusicImageCacheManager.cacheKey}');
+  int imageBytes = 0;
+  if (await imageDir.exists()) {
+    await for (final entity in imageDir.list(recursive: true)) {
+      if (entity is File) {
+        try {
+          imageBytes += await entity.length();
+        } catch (_) {}
+      }
     }
   }
-  return total;
+
+  return audioBytes + imageBytes;
+}
+
+// ─── Cache eviction ───────────────────────────────────────────────────────────
+
+Future<void> evictCacheIfNeeded(AppDatabase db, int maxBytes) async {
+  final currentBytes = await db.totalCacheSize();
+  if (currentBytes <= maxBytes) return;
+
+  // Delete oldest entries until we're under the limit
+  // Remove 10% extra to avoid evicting on every new cache
+  final targetBytes = (maxBytes * 0.9).round();
+  var freed = 0;
+
+  while (currentBytes - freed > targetBytes) {
+    final oldest = await db.oldestForEviction(1);
+    if (oldest.isEmpty) break;
+    final entry = oldest.first;
+    final file = File(entry.filePath);
+    if (await file.exists()) {
+      freed += await file.length();
+      await file.delete();
+    }
+    await db.deleteById(entry.id);
+  }
 }
