@@ -23,6 +23,8 @@ class CachedSongs extends Table {
   IntColumn get cachedAt => integer()();
   IntColumn get lastAccessedAt => integer()();
   TextColumn get filePath => text()();
+  TextColumn get coverArtPath => text().nullable()();
+  TextColumn get lyricsJson => text().nullable()();
   BoolColumn get isDownload => boolean().withDefault(const Constant(false))();
 
   @override
@@ -34,7 +36,17 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (migrator, from, to) async {
+          if (from < 2) {
+            await migrator.addColumn(cachedSongs, cachedSongs.coverArtPath);
+            await migrator.addColumn(cachedSongs, cachedSongs.lyricsJson);
+          }
+        },
+      );
 
   // ─── Insert / Update ─────────────────────────────────────────────────
 

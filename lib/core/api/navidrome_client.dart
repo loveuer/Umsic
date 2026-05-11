@@ -89,6 +89,27 @@ class NavidromeClient {
     return body;
   }
 
+  /// Like [_request] but accepts [List<String>] values for duplicate query params.
+  Future<Map<String, dynamic>> _requestMulti(
+    String endpoint,
+    Map<String, dynamic> params,
+  ) async {
+    final queryParams = <String, dynamic>{..._authParams(), ...params};
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$serverUrl/rest/$endpoint',
+      queryParameters: queryParams,
+    );
+    final body = response.data!['subsonic-response'] as Map<String, dynamic>;
+    if (body['status'] != 'ok') {
+      final error = body['error'] as Map<String, dynamic>?;
+      throw SubsonicException(
+        error?['code'] as int? ?? -1,
+        error?['message'] as String? ?? 'Unknown error',
+      );
+    }
+    return body;
+  }
+
   // ─── Ping ─────────────────────────────────────────────────────────────────
 
   Future<void> ping() => _request('ping');
@@ -164,10 +185,34 @@ class NavidromeClient {
   Future<PlaylistDetail> getPlaylist(String id) async {
     final body = await _request('getPlaylist', {'id': id});
     final raw = Map<String, dynamic>.from(body['playlist'] as Map<String, dynamic>);
-    // Navidrome returns songs under key 'entry', map to 'entries'
     if (raw.containsKey('entry')) raw['entries'] = raw.remove('entry');
     return PlaylistDetail.fromJson(raw);
   }
+
+  Future<Playlist> createPlaylist({String? name, List<String>? songIds}) async {
+    final body = await _requestMulti('createPlaylist', {
+      ?'name': name,
+      ?'songId': songIds,
+    });
+    return Playlist.fromJson(body['playlist'] as Map<String, dynamic>);
+  }
+
+  Future<void> updatePlaylist(
+    String playlistId, {
+    String? name,
+    List<String>? songIdsToAdd,
+    List<int>? songIndexesToRemove,
+  }) async {
+    await _requestMulti('updatePlaylist', {
+      'playlistId': playlistId,
+      ?'name': name,
+      ?'songIdToAdd': songIdsToAdd,
+      ?'songIndexToRemove': songIndexesToRemove?.map((i) => '$i').toList(),
+    });
+  }
+
+  Future<void> deletePlaylist(String playlistId) =>
+      _request('deletePlaylist', {'id': playlistId});
 
   // ─── Starred (我的最爱) ────────────────────────────────────────────────────
 

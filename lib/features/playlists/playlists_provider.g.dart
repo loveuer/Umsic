@@ -164,6 +164,22 @@ class _PlaylistDetailProviderElement
   String get id => (origin as PlaylistDetailProvider).id;
 }
 
+String _$playlistMutationsHash() => r'f15cd48af14aee3bd90842a375552b91b7093755';
+
+/// See also [PlaylistMutations].
+@ProviderFor(PlaylistMutations)
+final playlistMutationsProvider =
+    AutoDisposeNotifierProvider<PlaylistMutations, void>.internal(
+      PlaylistMutations.new,
+      name: r'playlistMutationsProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$playlistMutationsHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$PlaylistMutations = AutoDisposeNotifier<void>;
 String _$starredSongsHash() => r'3d587790fe8737c623acf11a5e00ec5186a0159e';
 
 /// See also [StarredSongs].

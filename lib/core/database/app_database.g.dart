@@ -204,6 +204,28 @@ class $CachedSongsTable extends CachedSongs
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _coverArtPathMeta = const VerificationMeta(
+    'coverArtPath',
+  );
+  @override
+  late final GeneratedColumn<String> coverArtPath = GeneratedColumn<String>(
+    'cover_art_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lyricsJsonMeta = const VerificationMeta(
+    'lyricsJson',
+  );
+  @override
+  late final GeneratedColumn<String> lyricsJson = GeneratedColumn<String>(
+    'lyrics_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isDownloadMeta = const VerificationMeta(
     'isDownload',
   );
@@ -240,6 +262,8 @@ class $CachedSongsTable extends CachedSongs
     cachedAt,
     lastAccessedAt,
     filePath,
+    coverArtPath,
+    lyricsJson,
     isDownload,
   ];
   @override
@@ -381,6 +405,21 @@ class $CachedSongsTable extends CachedSongs
     } else if (isInserting) {
       context.missing(_filePathMeta);
     }
+    if (data.containsKey('cover_art_path')) {
+      context.handle(
+        _coverArtPathMeta,
+        coverArtPath.isAcceptableOrUnknown(
+          data['cover_art_path']!,
+          _coverArtPathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('lyrics_json')) {
+      context.handle(
+        _lyricsJsonMeta,
+        lyricsJson.isAcceptableOrUnknown(data['lyrics_json']!, _lyricsJsonMeta),
+      );
+    }
     if (data.containsKey('is_download')) {
       context.handle(
         _isDownloadMeta,
@@ -472,6 +511,14 @@ class $CachedSongsTable extends CachedSongs
         DriftSqlType.string,
         data['${effectivePrefix}file_path'],
       )!,
+      coverArtPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cover_art_path'],
+      ),
+      lyricsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lyrics_json'],
+      ),
       isDownload: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_download'],
@@ -505,6 +552,8 @@ class CachedSong extends DataClass implements Insertable<CachedSong> {
   final int cachedAt;
   final int lastAccessedAt;
   final String filePath;
+  final String? coverArtPath;
+  final String? lyricsJson;
   final bool isDownload;
   const CachedSong({
     required this.id,
@@ -526,6 +575,8 @@ class CachedSong extends DataClass implements Insertable<CachedSong> {
     required this.cachedAt,
     required this.lastAccessedAt,
     required this.filePath,
+    this.coverArtPath,
+    this.lyricsJson,
     required this.isDownload,
   });
   @override
@@ -576,6 +627,12 @@ class CachedSong extends DataClass implements Insertable<CachedSong> {
     map['cached_at'] = Variable<int>(cachedAt);
     map['last_accessed_at'] = Variable<int>(lastAccessedAt);
     map['file_path'] = Variable<String>(filePath);
+    if (!nullToAbsent || coverArtPath != null) {
+      map['cover_art_path'] = Variable<String>(coverArtPath);
+    }
+    if (!nullToAbsent || lyricsJson != null) {
+      map['lyrics_json'] = Variable<String>(lyricsJson);
+    }
     map['is_download'] = Variable<bool>(isDownload);
     return map;
   }
@@ -623,6 +680,12 @@ class CachedSong extends DataClass implements Insertable<CachedSong> {
       cachedAt: Value(cachedAt),
       lastAccessedAt: Value(lastAccessedAt),
       filePath: Value(filePath),
+      coverArtPath: coverArtPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coverArtPath),
+      lyricsJson: lyricsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lyricsJson),
       isDownload: Value(isDownload),
     );
   }
@@ -652,6 +715,8 @@ class CachedSong extends DataClass implements Insertable<CachedSong> {
       cachedAt: serializer.fromJson<int>(json['cachedAt']),
       lastAccessedAt: serializer.fromJson<int>(json['lastAccessedAt']),
       filePath: serializer.fromJson<String>(json['filePath']),
+      coverArtPath: serializer.fromJson<String?>(json['coverArtPath']),
+      lyricsJson: serializer.fromJson<String?>(json['lyricsJson']),
       isDownload: serializer.fromJson<bool>(json['isDownload']),
     );
   }
@@ -678,6 +743,8 @@ class CachedSong extends DataClass implements Insertable<CachedSong> {
       'cachedAt': serializer.toJson<int>(cachedAt),
       'lastAccessedAt': serializer.toJson<int>(lastAccessedAt),
       'filePath': serializer.toJson<String>(filePath),
+      'coverArtPath': serializer.toJson<String?>(coverArtPath),
+      'lyricsJson': serializer.toJson<String?>(lyricsJson),
       'isDownload': serializer.toJson<bool>(isDownload),
     };
   }
@@ -702,6 +769,8 @@ class CachedSong extends DataClass implements Insertable<CachedSong> {
     int? cachedAt,
     int? lastAccessedAt,
     String? filePath,
+    Value<String?> coverArtPath = const Value.absent(),
+    Value<String?> lyricsJson = const Value.absent(),
     bool? isDownload,
   }) => CachedSong(
     id: id ?? this.id,
@@ -723,6 +792,8 @@ class CachedSong extends DataClass implements Insertable<CachedSong> {
     cachedAt: cachedAt ?? this.cachedAt,
     lastAccessedAt: lastAccessedAt ?? this.lastAccessedAt,
     filePath: filePath ?? this.filePath,
+    coverArtPath: coverArtPath.present ? coverArtPath.value : this.coverArtPath,
+    lyricsJson: lyricsJson.present ? lyricsJson.value : this.lyricsJson,
     isDownload: isDownload ?? this.isDownload,
   );
   CachedSong copyWithCompanion(CachedSongsCompanion data) {
@@ -750,6 +821,12 @@ class CachedSong extends DataClass implements Insertable<CachedSong> {
           ? data.lastAccessedAt.value
           : this.lastAccessedAt,
       filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      coverArtPath: data.coverArtPath.present
+          ? data.coverArtPath.value
+          : this.coverArtPath,
+      lyricsJson: data.lyricsJson.present
+          ? data.lyricsJson.value
+          : this.lyricsJson,
       isDownload: data.isDownload.present
           ? data.isDownload.value
           : this.isDownload,
@@ -778,13 +855,15 @@ class CachedSong extends DataClass implements Insertable<CachedSong> {
           ..write('cachedAt: $cachedAt, ')
           ..write('lastAccessedAt: $lastAccessedAt, ')
           ..write('filePath: $filePath, ')
+          ..write('coverArtPath: $coverArtPath, ')
+          ..write('lyricsJson: $lyricsJson, ')
           ..write('isDownload: $isDownload')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     title,
     artist,
@@ -804,8 +883,10 @@ class CachedSong extends DataClass implements Insertable<CachedSong> {
     cachedAt,
     lastAccessedAt,
     filePath,
+    coverArtPath,
+    lyricsJson,
     isDownload,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -829,6 +910,8 @@ class CachedSong extends DataClass implements Insertable<CachedSong> {
           other.cachedAt == this.cachedAt &&
           other.lastAccessedAt == this.lastAccessedAt &&
           other.filePath == this.filePath &&
+          other.coverArtPath == this.coverArtPath &&
+          other.lyricsJson == this.lyricsJson &&
           other.isDownload == this.isDownload);
 }
 
@@ -852,6 +935,8 @@ class CachedSongsCompanion extends UpdateCompanion<CachedSong> {
   final Value<int> cachedAt;
   final Value<int> lastAccessedAt;
   final Value<String> filePath;
+  final Value<String?> coverArtPath;
+  final Value<String?> lyricsJson;
   final Value<bool> isDownload;
   final Value<int> rowid;
   const CachedSongsCompanion({
@@ -874,6 +959,8 @@ class CachedSongsCompanion extends UpdateCompanion<CachedSong> {
     this.cachedAt = const Value.absent(),
     this.lastAccessedAt = const Value.absent(),
     this.filePath = const Value.absent(),
+    this.coverArtPath = const Value.absent(),
+    this.lyricsJson = const Value.absent(),
     this.isDownload = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -897,6 +984,8 @@ class CachedSongsCompanion extends UpdateCompanion<CachedSong> {
     required int cachedAt,
     required int lastAccessedAt,
     required String filePath,
+    this.coverArtPath = const Value.absent(),
+    this.lyricsJson = const Value.absent(),
     this.isDownload = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -924,6 +1013,8 @@ class CachedSongsCompanion extends UpdateCompanion<CachedSong> {
     Expression<int>? cachedAt,
     Expression<int>? lastAccessedAt,
     Expression<String>? filePath,
+    Expression<String>? coverArtPath,
+    Expression<String>? lyricsJson,
     Expression<bool>? isDownload,
     Expression<int>? rowid,
   }) {
@@ -947,6 +1038,8 @@ class CachedSongsCompanion extends UpdateCompanion<CachedSong> {
       if (cachedAt != null) 'cached_at': cachedAt,
       if (lastAccessedAt != null) 'last_accessed_at': lastAccessedAt,
       if (filePath != null) 'file_path': filePath,
+      if (coverArtPath != null) 'cover_art_path': coverArtPath,
+      if (lyricsJson != null) 'lyrics_json': lyricsJson,
       if (isDownload != null) 'is_download': isDownload,
       if (rowid != null) 'rowid': rowid,
     });
@@ -972,6 +1065,8 @@ class CachedSongsCompanion extends UpdateCompanion<CachedSong> {
     Value<int>? cachedAt,
     Value<int>? lastAccessedAt,
     Value<String>? filePath,
+    Value<String?>? coverArtPath,
+    Value<String?>? lyricsJson,
     Value<bool>? isDownload,
     Value<int>? rowid,
   }) {
@@ -995,6 +1090,8 @@ class CachedSongsCompanion extends UpdateCompanion<CachedSong> {
       cachedAt: cachedAt ?? this.cachedAt,
       lastAccessedAt: lastAccessedAt ?? this.lastAccessedAt,
       filePath: filePath ?? this.filePath,
+      coverArtPath: coverArtPath ?? this.coverArtPath,
+      lyricsJson: lyricsJson ?? this.lyricsJson,
       isDownload: isDownload ?? this.isDownload,
       rowid: rowid ?? this.rowid,
     );
@@ -1060,6 +1157,12 @@ class CachedSongsCompanion extends UpdateCompanion<CachedSong> {
     if (filePath.present) {
       map['file_path'] = Variable<String>(filePath.value);
     }
+    if (coverArtPath.present) {
+      map['cover_art_path'] = Variable<String>(coverArtPath.value);
+    }
+    if (lyricsJson.present) {
+      map['lyrics_json'] = Variable<String>(lyricsJson.value);
+    }
     if (isDownload.present) {
       map['is_download'] = Variable<bool>(isDownload.value);
     }
@@ -1091,6 +1194,8 @@ class CachedSongsCompanion extends UpdateCompanion<CachedSong> {
           ..write('cachedAt: $cachedAt, ')
           ..write('lastAccessedAt: $lastAccessedAt, ')
           ..write('filePath: $filePath, ')
+          ..write('coverArtPath: $coverArtPath, ')
+          ..write('lyricsJson: $lyricsJson, ')
           ..write('isDownload: $isDownload, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -1130,6 +1235,8 @@ typedef $$CachedSongsTableCreateCompanionBuilder =
       required int cachedAt,
       required int lastAccessedAt,
       required String filePath,
+      Value<String?> coverArtPath,
+      Value<String?> lyricsJson,
       Value<bool> isDownload,
       Value<int> rowid,
     });
@@ -1154,6 +1261,8 @@ typedef $$CachedSongsTableUpdateCompanionBuilder =
       Value<int> cachedAt,
       Value<int> lastAccessedAt,
       Value<String> filePath,
+      Value<String?> coverArtPath,
+      Value<String?> lyricsJson,
       Value<bool> isDownload,
       Value<int> rowid,
     });
@@ -1259,6 +1368,16 @@ class $$CachedSongsTableFilterComposer
 
   ColumnFilters<String> get filePath => $composableBuilder(
     column: $table.filePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coverArtPath => $composableBuilder(
+    column: $table.coverArtPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lyricsJson => $composableBuilder(
+    column: $table.lyricsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1372,6 +1491,16 @@ class $$CachedSongsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get coverArtPath => $composableBuilder(
+    column: $table.coverArtPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lyricsJson => $composableBuilder(
+    column: $table.lyricsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isDownload => $composableBuilder(
     column: $table.isDownload,
     builder: (column) => ColumnOrderings(column),
@@ -1448,6 +1577,16 @@ class $$CachedSongsTableAnnotationComposer
   GeneratedColumn<String> get filePath =>
       $composableBuilder(column: $table.filePath, builder: (column) => column);
 
+  GeneratedColumn<String> get coverArtPath => $composableBuilder(
+    column: $table.coverArtPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lyricsJson => $composableBuilder(
+    column: $table.lyricsJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isDownload => $composableBuilder(
     column: $table.isDownload,
     builder: (column) => column,
@@ -1504,6 +1643,8 @@ class $$CachedSongsTableTableManager
                 Value<int> cachedAt = const Value.absent(),
                 Value<int> lastAccessedAt = const Value.absent(),
                 Value<String> filePath = const Value.absent(),
+                Value<String?> coverArtPath = const Value.absent(),
+                Value<String?> lyricsJson = const Value.absent(),
                 Value<bool> isDownload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CachedSongsCompanion(
@@ -1526,6 +1667,8 @@ class $$CachedSongsTableTableManager
                 cachedAt: cachedAt,
                 lastAccessedAt: lastAccessedAt,
                 filePath: filePath,
+                coverArtPath: coverArtPath,
+                lyricsJson: lyricsJson,
                 isDownload: isDownload,
                 rowid: rowid,
               ),
@@ -1550,6 +1693,8 @@ class $$CachedSongsTableTableManager
                 required int cachedAt,
                 required int lastAccessedAt,
                 required String filePath,
+                Value<String?> coverArtPath = const Value.absent(),
+                Value<String?> lyricsJson = const Value.absent(),
                 Value<bool> isDownload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CachedSongsCompanion.insert(
@@ -1572,6 +1717,8 @@ class $$CachedSongsTableTableManager
                 cachedAt: cachedAt,
                 lastAccessedAt: lastAccessedAt,
                 filePath: filePath,
+                coverArtPath: coverArtPath,
+                lyricsJson: lyricsJson,
                 isDownload: isDownload,
                 rowid: rowid,
               ),

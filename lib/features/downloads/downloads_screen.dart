@@ -1,9 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/api/models/subsonic_models.dart';
 import '../../core/api/navidrome_client.dart';
+import '../../core/database/app_database.dart';
 import '../../shared/widgets/song_list_tile.dart';
 import 'downloads_provider.dart';
+
+Song _toSong(CachedSong row) {
+  return Song(
+    id: row.id,
+    title: row.title,
+    artist: row.artist,
+    artistId: row.artistId,
+    album: row.album,
+    albumId: row.albumId,
+    coverArt: row.coverArt,
+    duration: row.duration,
+    track: row.track,
+    year: row.year,
+    genre: row.genre,
+    contentType: row.contentType,
+    suffix: row.suffix,
+    size: row.size,
+    bitRate: row.bitRate,
+    starred: row.starred,
+  );
+}
 
 class DownloadsScreen extends ConsumerWidget {
   const DownloadsScreen({super.key});
@@ -33,8 +56,8 @@ class DownloadsScreen extends ConsumerWidget {
             ),
           ),
         ),
-        data: (songs) {
-          if (songs.isEmpty) {
+        data: (cachedSongs) {
+          if (cachedSongs.isEmpty) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -73,16 +96,21 @@ class DownloadsScreen extends ConsumerWidget {
                     child: Row(
                       children: [
                         Text(
-                          '${songs.length} 首已缓存',
+                          '${cachedSongs.length} 首已缓存',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const Spacer(),
                         FilledButton.icon(
-                          onPressed: songs.isEmpty
+                          onPressed: cachedSongs.isEmpty
                               ? null
-                              : () => ref
-                                  .read(downloadsPlayerProvider.notifier)
-                                  .playCachedSongs(songs),
+                              : () {
+                                  final songs = cachedSongs
+                                      .map(_toSong)
+                                      .toList();
+                                  ref
+                                      .read(downloadsPlayerProvider.notifier)
+                                      .playCachedSongs(songs);
+                                },
                           icon: const Icon(Icons.play_arrow),
                           label: const Text('全部播放'),
                         ),
@@ -93,16 +121,17 @@ class DownloadsScreen extends ConsumerWidget {
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      final song = songs[index];
+                      final cached = cachedSongs[index];
+                      final song = _toSong(cached);
                       return Consumer(
                         builder: (context, ref, _) {
                           final clientAsync = ref.watch(navidromeClientProvider);
                           final coverUrl = clientAsync.valueOrNull?.coverArtUrl(
-                            song.coverArt ?? '',
+                            cached.coverArt ?? '',
                             size: 100,
                           );
                           return Dismissible(
-                            key: ValueKey(song.id),
+                            key: ValueKey(cached.id),
                             direction: DismissDirection.endToStart,
                             background: Container(
                               alignment: Alignment.centerRight,
@@ -118,7 +147,7 @@ class DownloadsScreen extends ConsumerWidget {
                                 context: context,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('删除缓存'),
-                                  content: Text('确定删除「${song.title}」的缓存？'),
+                                  content: Text('确定删除「${cached.title}」的缓存？'),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(ctx, false),
@@ -134,21 +163,25 @@ class DownloadsScreen extends ConsumerWidget {
                             },
                             onDismissed: (_) {
                               ref
-                                  .read(deleteCachedSongProvider(song.id).notifier)
+                                  .read(deleteCachedSongProvider(cached.id).notifier)
                                   .delete();
                             },
                             child: SongListTile(
                               song: song,
-                              coverArtUrl: song.coverArt != null ? coverUrl : null,
-                              onTap: () => ref
-                                  .read(downloadsPlayerProvider.notifier)
-                                  .playCachedSongs(songs, startIndex: index),
+                              coverArtUrl: cached.coverArt != null ? coverUrl : null,
+                              localCoverArtPath: cached.coverArtPath,
+                              onTap: () {
+                                final songs = cachedSongs.map(_toSong).toList();
+                                ref
+                                    .read(downloadsPlayerProvider.notifier)
+                                    .playCachedSongs(songs, startIndex: index);
+                              },
                             ),
                           );
                         },
                       );
                     },
-                    childCount: songs.length,
+                    childCount: cachedSongs.length,
                   ),
                 ),
               ],

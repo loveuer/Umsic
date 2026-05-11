@@ -8,6 +8,7 @@ import 'package:just_audio/just_audio.dart';
 import '../../core/api/models/subsonic_models.dart';
 import '../../core/audio/audio_handler.dart';
 import '../../core/audio/player_controller.dart';
+import '../../core/database/database_provider.dart';
 import '../../features/playlists/playlists_provider.dart';
 import '../../shared/widgets/cover_art.dart';
 import 'lyrics_widget.dart';
@@ -108,6 +109,15 @@ class _PlayerView extends ConsumerWidget {
                 final playing = state?.playing ?? false;
                 final processingState = state?.processingState;
 
+                // Look up local cover art for cached songs
+                final String? localCoverPath;
+                if (currentSongId != null) {
+                  final pathAsync = ref.watch(cachedCoverArtPathProvider(currentSongId));
+                  localCoverPath = pathAsync.valueOrNull;
+                } else {
+                  localCoverPath = null;
+                }
+
                 return Column(
                   children: [
                     // Cover art
@@ -120,6 +130,7 @@ class _PlayerView extends ConsumerWidget {
                             aspectRatio: 1,
                             child: CoverArtImage(
                               url: media?.artUri?.toString(),
+                              localPath: localCoverPath,
                               borderRadius: 16,
                             ),
                           ),

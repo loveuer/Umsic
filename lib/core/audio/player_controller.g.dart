@@ -176,9 +176,9 @@ class _IsSongCachedProviderElement
   String get songId => (origin as IsSongCachedProvider).songId;
 }
 
-String _$songLyricsHash() => r'880a0b3cfae2cc443d7d27d094565fab738c2f2f';
+String _$songLyricsHash() => r'd915ff23a84ca6af57a55e7e089b6797bb0efbeb';
 
-/// Current song's lyrics
+/// Current song's lyrics — checks cached DB entry first, falls back to network.
 ///
 /// Copied from [songLyrics].
 @ProviderFor(songLyrics)
@@ -248,7 +248,7 @@ final playModeNotifierProvider =
     );
 
 typedef _$PlayModeNotifier = Notifier<PlayMode>;
-String _$playerControllerHash() => r'd692abb31db0d0fd1443177640d631122ba263a2';
+String _$playerControllerHash() => r'e28c50ca2d3050d8532d5e095eb63e95f0e38003';
 
 /// Helper provider to play a list of songs starting at index
 ///
@@ -266,7 +266,7 @@ final playerControllerProvider =
     );
 
 typedef _$PlayerController = AutoDisposeNotifier<void>;
-String _$downloadManagerHash() => r'0352b6ecffafe2c571942069cc853ee42317203a';
+String _$downloadManagerHash() => r'27835f5a64624733cde32207347eab81d74ff747';
 
 /// Download manager — keepAlive so downloads survive navigation.
 ///

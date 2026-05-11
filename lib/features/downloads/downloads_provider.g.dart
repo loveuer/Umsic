@@ -6,26 +6,27 @@ part of 'downloads_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$cachedSongsHash() => r'3775640bf32d34050b55cea3d16e19c3d4be7e38';
+String _$cachedSongsHash() => r'805502806ba7ebb26bb00b4fa5b7932d4811bc8d';
 
 /// Watch all cached songs reactively via drift's built-in change notification.
 ///
 /// Copied from [cachedSongs].
 @ProviderFor(cachedSongs)
-final cachedSongsProvider = AutoDisposeStreamProvider<List<Song>>.internal(
-  cachedSongs,
-  name: r'cachedSongsProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$cachedSongsHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+final cachedSongsProvider =
+    AutoDisposeStreamProvider<List<CachedSong>>.internal(
+      cachedSongs,
+      name: r'cachedSongsProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$cachedSongsHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef CachedSongsRef = AutoDisposeStreamProviderRef<List<Song>>;
-String _$deleteCachedSongHash() => r'96f415da2b17f6ba97e01f60a9f34f2ba69d55ca';
+typedef CachedSongsRef = AutoDisposeStreamProviderRef<List<CachedSong>>;
+String _$deleteCachedSongHash() => r'38a54cfb1a00fbd6c2cbf8f65e35606cbdc81281';
 
 /// Copied from Dart SDK
 class _SystemHash {

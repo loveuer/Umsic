@@ -11,12 +11,91 @@ import 'playlists_provider.dart';
 class PlaylistsScreen extends ConsumerWidget {
   const PlaylistsScreen({super.key});
 
+  Future<void> _createPlaylist(BuildContext context, WidgetRef ref) async {
+    final nameCtrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('新建歌单'),
+        content: TextField(
+          controller: nameCtrl,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: '歌单名称',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, nameCtrl.text.trim()),
+            child: const Text('创建'),
+          ),
+        ],
+      ),
+    );
+    nameCtrl.dispose();
+    if (name == null || name.isEmpty) return;
+
+    try {
+      final playlist = await ref
+          .read(playlistMutationsProvider.notifier)
+          .createPlaylist(name);
+      if (context.mounted) context.push('/playlists/${playlist.id}');
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('创建失败：$e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deletePlaylist(
+      BuildContext context, WidgetRef ref, String id, String name) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('删除歌单'),
+        content: Text('确定删除「$name」？此操作不可撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      await ref.read(playlistMutationsProvider.notifier).deletePlaylist(id);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('删除失败：$e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playlistsAsync = ref.watch(playlistsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('歌单')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _createPlaylist(context, ref),
+        child: const Icon(Icons.add),
+      ),
       body: playlistsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(e.toString())),
@@ -48,6 +127,9 @@ class PlaylistsScreen extends ConsumerWidget {
                 title: Text(pl.name),
                 subtitle: pl.songCount != null ? Text('${pl.songCount} 首') : null,
                 onTap: () => context.push('/playlists/${pl.id}'),
+                onLongPress: isFavorites
+                    ? null
+                    : () => _deletePlaylist(context, ref, pl.id, pl.name),
               );
             },
           );
@@ -125,13 +207,50 @@ class PlaylistDetailScreen extends ConsumerWidget {
                     final coverArtUrl = song.coverArt != null
                         ? clientAsync.valueOrNull?.coverArtUrl(song.coverArt!, size: 100)
                         : null;
-                    return SongListTile(
+                    final tile = SongListTile(
                       song: song,
                       coverArtUrl: coverArtUrl,
                       showIndex: index + 1,
                       onTap: () => ref
                           .read(playerControllerProvider.notifier)
                           .playSongs(detail.entries, startIndex: index),
+                    );
+                    if (isFavorites) return tile;
+                    return Dismissible(
+                      key: ValueKey(song.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 24),
+                        color: Theme.of(context).colorScheme.error,
+                        child: Icon(Icons.delete,
+                            color: Theme.of(context).colorScheme.onError),
+                      ),
+                      confirmDismiss: (_) async {
+                        return showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('移除歌曲'),
+                            content: Text('确定从「${detail.name}」中移除「${song.title}」？'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('取消'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('移除'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      onDismissed: (_) {
+                        ref
+                            .read(playlistMutationsProvider.notifier)
+                            .removeFromPlaylist(playlistId, index);
+                      },
+                      child: tile,
                     );
                   },
                   childCount: detail.entries.length,

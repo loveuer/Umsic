@@ -133,6 +133,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Clear audio cache files.
       final audioDir = Directory('${tempDir.path}/audio_cache');
       if (await audioDir.exists()) await audioDir.delete(recursive: true);
+      // Clear cached cover art files.
+      final coverArtDir = Directory('${tempDir.path}/cover_art_cache');
+      if (await coverArtDir.exists()) await coverArtDir.delete(recursive: true);
       // Clear cache metadata in database
       final db = ref.read(appDatabaseProvider);
       await db.deleteAll();

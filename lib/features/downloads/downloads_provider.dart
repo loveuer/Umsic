@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../core/api/models/subsonic_models.dart';
@@ -10,9 +12,9 @@ part 'downloads_provider.g.dart';
 
 /// Watch all cached songs reactively via drift's built-in change notification.
 @riverpod
-Stream<List<Song>> cachedSongs(CachedSongsRef ref) async* {
+Stream<List<CachedSong>> cachedSongs(CachedSongsRef ref) async* {
   final db = ref.watch(appDatabaseProvider);
-  yield* db.watchAll().map((rows) => rows.map(_toSong).toList());
+  yield* db.watchAll();
 }
 
 @riverpod
@@ -24,9 +26,19 @@ class DeleteCachedSong extends _$DeleteCachedSong {
     final db = ref.read(appDatabaseProvider);
     final handler = ref.read(audioHandlerProvider);
 
+    // Get cover art path before deleting DB entry
+    final cached = await db.getById(songId);
     await db.deleteById(songId);
+
     final file = await handler.cacheFileForSong(songId);
     if (await file.exists()) await file.delete();
+
+    // Also delete cached cover art file
+    final coverPath = cached?.coverArtPath;
+    if (coverPath != null && coverPath.isNotEmpty) {
+      final coverFile = File(coverPath);
+      if (await coverFile.exists()) await coverFile.delete();
+    }
   }
 }
 
@@ -68,25 +80,4 @@ class DownloadsPlayer extends _$DownloadsPlayer {
     );
     await handler.play();
   }
-}
-
-Song _toSong(CachedSong row) {
-  return Song(
-    id: row.id,
-    title: row.title,
-    artist: row.artist,
-    artistId: row.artistId,
-    album: row.album,
-    albumId: row.albumId,
-    coverArt: row.coverArt,
-    duration: row.duration,
-    track: row.track,
-    year: row.year,
-    genre: row.genre,
-    contentType: row.contentType,
-    suffix: row.suffix,
-    size: row.size,
-    bitRate: row.bitRate,
-    starred: row.starred,
-  );
 }

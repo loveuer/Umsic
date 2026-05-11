@@ -31,6 +31,41 @@ Future<PlaylistDetail> playlistDetail(PlaylistDetailRef ref, String id) async {
   return client.getPlaylist(id);
 }
 
+// ─── Playlist Mutations ──────────────────────────────────────────────────────
+
+@riverpod
+class PlaylistMutations extends _$PlaylistMutations {
+  @override
+  void build() {}
+
+  Future<Playlist> createPlaylist(String name) async {
+    final client = await ref.read(navidromeClientProvider.future);
+    final playlist = await client.createPlaylist(name: name);
+    ref.invalidate(playlistsProvider);
+    return playlist;
+  }
+
+  Future<void> addToPlaylist(String playlistId, String songId) async {
+    final client = await ref.read(navidromeClientProvider.future);
+    await client.updatePlaylist(playlistId, songIdsToAdd: [songId]);
+    ref.invalidate(playlistDetailProvider(playlistId));
+    ref.invalidate(playlistsProvider);
+  }
+
+  Future<void> removeFromPlaylist(String playlistId, int songIndex) async {
+    final client = await ref.read(navidromeClientProvider.future);
+    await client.updatePlaylist(playlistId, songIndexesToRemove: [songIndex]);
+    ref.invalidate(playlistDetailProvider(playlistId));
+    ref.invalidate(playlistsProvider);
+  }
+
+  Future<void> deletePlaylist(String playlistId) async {
+    final client = await ref.read(navidromeClientProvider.future);
+    await client.deletePlaylist(playlistId);
+    ref.invalidate(playlistsProvider);
+  }
+}
+
 // ─── Starred Songs ───────────────────────────────────────────────────────────
 
 @Riverpod(keepAlive: true)

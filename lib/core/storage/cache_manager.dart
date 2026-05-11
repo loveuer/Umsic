@@ -98,6 +98,14 @@ Future<void> evictCacheIfNeeded(AppDatabase db, int maxBytes) async {
       freed += await file.length();
       await file.delete();
     }
+    // Also delete cached cover art file
+    final coverPath = entry.coverArtPath;
+    if (coverPath != null && coverPath.isNotEmpty) {
+      final coverFile = File(coverPath);
+      if (await coverFile.exists()) {
+        await coverFile.delete();
+      }
+    }
     await db.deleteById(entry.id);
   }
 }

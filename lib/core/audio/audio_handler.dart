@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
@@ -7,9 +8,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/models/subsonic_models.dart';
+import '../api/navidrome_client.dart';
 import '../database/app_database.dart';
 import '../storage/cache_manager.dart';
 import 'single_download_cache_source.dart';
+
+NavidromeClient? _clientForCache;
 
 MediaItem songToMediaItem(Song song, String streamUrl, {String? coverArtUrl}) {
   return MediaItem(
@@ -32,6 +36,44 @@ Future<void> _cleanStaleCacheFiles(Directory cacheDir) async {
         await entity.delete();
       } catch (_) {}
     }
+  }
+}
+
+/// Download cover art for a song and return the local file path.
+Future<String?> _downloadCoverArt(String coverArtId, String url) async {
+  try {
+    final cachePath = '${(await getTemporaryDirectory()).path}/cover_art_cache/$coverArtId';
+    final file = File(cachePath);
+    if (await file.exists()) return cachePath;
+
+    final partialFile = File('$cachePath.part');
+    final client = HttpClient();
+    final request = await client.getUrl(Uri.parse(url));
+    final response = await request.close();
+    if (response.statusCode != 200) {
+      client.close();
+      return null;
+    }
+    await partialFile.create(recursive: true);
+    final sink = partialFile.openWrite();
+    await sink.addStream(response);
+    await sink.flush();
+    await sink.close();
+    client.close();
+    await partialFile.rename(cachePath);
+    return cachePath;
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Serialize lyrics to JSON string for DB storage.
+String? _serializeLyrics(List<StructuredLyrics> lyrics) {
+  if (lyrics.isEmpty) return null;
+  try {
+    return jsonEncode(lyrics.map((l) => l.toJson()).toList());
+  } catch (_) {
+    return null;
   }
 }
 
@@ -59,6 +101,11 @@ class MusicAudioHandler extends BaseAudioHandler
 
   void setDatabase(AppDatabase db) {
     _db = db;
+  }
+
+  /// Set the Navidrome client for background cover art / lyrics caching.
+  void setClientForCache(NavidromeClient client) {
+    _clientForCache = client;
   }
 
   /// The audio cache directory (available after first _ensureCacheDir call).
@@ -119,6 +166,18 @@ class MusicAudioHandler extends BaseAudioHandler
       final fileExists = await cacheFile.exists();
       final fileSize = fileExists ? await cacheFile.length() : song.size;
 
+      // Download cover art and lyrics in parallel
+      String? coverPath;
+      String? lyricsStr;
+      if (song.coverArt != null && _clientForCache != null) {
+        final artUrl = _clientForCache!.coverArtUrl(song.coverArt!, size: 300);
+        coverPath = await _downloadCoverArt(song.coverArt!, artUrl);
+      }
+      if (_clientForCache != null) {
+        final lyrics = await _clientForCache!.getLyrics(song.id);
+        lyricsStr = _serializeLyrics(lyrics);
+      }
+
       await _db!.insertOrUpdate(
         CachedSongsCompanion.insert(
           id: song.id,
@@ -128,6 +187,8 @@ class MusicAudioHandler extends BaseAudioHandler
           album: Value(song.album),
           albumId: Value(song.albumId),
           coverArt: Value(song.coverArt),
+          coverArtPath: Value(coverPath),
+          lyricsJson: Value(lyricsStr),
           duration: Value(song.duration),
           track: Value(song.track),
           year: Value(song.year),
@@ -198,6 +259,18 @@ class MusicAudioHandler extends BaseAudioHandler
       final fileExists = await cacheFile.exists();
       final fileSize = fileExists ? await cacheFile.length() : song.size;
 
+      // Download cover art and lyrics in parallel
+      String? coverPath;
+      String? lyricsStr;
+      if (song.coverArt != null && _clientForCache != null) {
+        final artUrl = _clientForCache!.coverArtUrl(song.coverArt!, size: 300);
+        coverPath = await _downloadCoverArt(song.coverArt!, artUrl);
+      }
+      if (_clientForCache != null) {
+        final lyrics = await _clientForCache!.getLyrics(song.id);
+        lyricsStr = _serializeLyrics(lyrics);
+      }
+
       await _db!.insertOrUpdate(
         CachedSongsCompanion.insert(
           id: song.id,
@@ -207,6 +280,8 @@ class MusicAudioHandler extends BaseAudioHandler
           album: Value(song.album),
           albumId: Value(song.albumId),
           coverArt: Value(song.coverArt),
+          coverArtPath: Value(coverPath),
+          lyricsJson: Value(lyricsStr),
           duration: Value(song.duration),
           track: Value(song.track),
           year: Value(song.year),
