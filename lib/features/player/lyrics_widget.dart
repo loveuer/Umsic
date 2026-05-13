@@ -64,6 +64,7 @@ class _SyncedLyricsViewState extends ConsumerState<_SyncedLyricsView> {
   @override
   void initState() {
     super.initState();
+    _lineKeys = List.generate(widget.lyrics.line.length, (_) => GlobalKey());
     _startPositionTracking();
   }
 
@@ -94,15 +95,19 @@ class _SyncedLyricsViewState extends ConsumerState<_SyncedLyricsView> {
 
   void _scrollToLine(int index) {
     if (!_scrollController.hasClients) return;
-    const lineHeight = 48.0;
-    const viewHeight = 400.0;
-    final target = (index * lineHeight) - (viewHeight / 2) + lineHeight;
-    _scrollController.animateTo(
-      target.clamp(0, _scrollController.position.maxScrollExtent),
+    final context = _lineKeys[index].currentContext;
+    if (context == null) return;
+
+    // Use Scrollable.ensureVisible with alignment 0.5 to center the line
+    Scrollable.ensureVisible(
+      context,
+      alignment: 0.5,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
     );
   }
+
+  late final List<GlobalKey> _lineKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -116,6 +121,7 @@ class _SyncedLyricsViewState extends ConsumerState<_SyncedLyricsView> {
       itemBuilder: (context, i) {
         final isCurrent = i == _currentLineIndex;
         return Padding(
+          key: _lineKeys[i],
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           child: Text(
             lines[i].value,

@@ -131,11 +131,7 @@ class MusicAudioHandler extends BaseAudioHandler
     _cacheInitialized = true;
   }
 
-  Future<AudioSource> _resolveAudioSource(
-    Song song,
-    String streamUrl, {
-    bool cacheWhileStreaming = false,
-  }) async {
+  Future<AudioSource> _resolveAudioSource(Song song, String streamUrl) async {
     await _ensureCacheDir();
 
     final cacheFile = File('${_cacheDir.path}/${song.id}');
@@ -144,17 +140,14 @@ class MusicAudioHandler extends BaseAudioHandler
       return AudioSource.uri(cacheFile.uri);
     }
 
-    if (cacheWhileStreaming) {
-      return SingleDownloadCachingAudioSource(
-        Uri.parse(streamUrl),
-        cacheFile: cacheFile,
-        onComplete: () => _onSongCached(song),
-      );
-    }
-
-    // Non-current songs stream directly — avoids proxy overhead for the
-    // entire queue. Background caching is triggered by _onSongChanged.
-    return AudioSource.uri(Uri.parse(streamUrl));
+    // All uncached songs use a caching source that fires onComplete when
+    // the download finishes, ensuring every played song gets registered in DB
+    // with cover art and lyrics cached alongside.
+    return SingleDownloadCachingAudioSource(
+      Uri.parse(streamUrl),
+      cacheFile: cacheFile,
+      onComplete: () => _onSongCached(song),
+    );
   }
 
   Future<void> _onSongCached(Song song) async {
@@ -334,13 +327,7 @@ class MusicAudioHandler extends BaseAudioHandler
     final sources = await Future.wait(
       List.generate(
         songs.length,
-        (i) => _resolveAudioSource(
-          songs[i],
-          streamUrls[i],
-          // Only the current song uses the caching source (1:1 traffic).
-          // Other songs stream directly; _onSongChanged handles background caching.
-          cacheWhileStreaming: i == initialIndex,
-        ),
+        (i) => _resolveAudioSource(songs[i], streamUrls[i]),
       ),
     );
 
